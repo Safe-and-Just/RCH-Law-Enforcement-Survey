@@ -66,9 +66,13 @@ data <- data |>
                          q59 == "45-54" ~ "45-54",
                          q59 == "55-65" ~ "55+",
                          q59 == "65+" ~ "55+"), 
-           gender = case_when(q57 == "Woman" ~ "Woman",
+         gender = case_when(q57 == "Woman" ~ "Woman",
                             q57 == "Man" ~ "Man",
-                            TRUE ~ "Man"))#key in brother
+                            TRUE ~ "Man"), #key in brother
+         location = case_when(q55 == "Yes, I live in the same neighborhood." ~ "Neighborhood",
+                              q55 == "Yes, I live in the same city." ~ "City",
+                              q55 == "Yes, I live in the same metro area." ~ "Metro area",
+                              TRUE ~ "Outside metro area"))
 
 race_check <- data |>
   select(q58_1, q58_2, q58_3, q58_4, q58_5, q58_6, q58_7, race_ethn)
@@ -134,13 +138,18 @@ auto <- function (data, v1) {
 
   race <- crosstabs(data, {{v1}}, race_ethn) %>%
     mutate(domain = "race") 
+  
+  location <- crosstabs(data, {{v1}}, location) %>%
+    mutate(domain = "location") 
 
   colnames(age) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   colnames(gender) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   colnames(agency) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   colnames(role) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   colnames(tenure) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
-  colnames(race) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
+  colnames(race) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")  
+  colnames(location) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
+
 
   total <- nrow(data)
 
@@ -155,7 +164,7 @@ auto <- function (data, v1) {
 
   colnames(total) <- c("answer",  "n_cases", "total", "pct", "subcategory", "domain")
 
-  df <- na.omit(rbind(total, race, gender, role, agency, tenure, age)) %>%
+  df <- na.omit(rbind(total, race, gender, role, agency, tenure, age, location)) %>%
     select(domain, subcategory, answer, pct) %>%
     mutate(pct = round(pct * 100)) %>%
     arrange(domain, subcategory)
@@ -183,15 +192,25 @@ export <- function(data, v1) {
   
   plot <- 
     ggplot(q, aes(x = subcategory, y = pct, fill = answer)) +
-    geom_col(position = "dodge") +
+    geom_col(position = position_dodge(width = 0.9)) +
+    geom_text(
+      aes(label = pct),
+      position = position_dodge(width = 0.9),
+      vjust = -0.25,
+      size = 3
+    ) +
     facet_wrap(~ domain, scales = "free_x") +
-    labs(title = (str_wrap(title$question)),
-         x = "Subcategory",
-         y = "Percentage",
-         fill = "Response") +
+    labs(
+      title = str_wrap(title$question),
+      x = "Subcategory",
+      y = "Percentage",
+      fill = "Response"
+    ) +
     theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    theme(legend.position = "none")
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+  #    legend.position = "none"
+    )
   
   agree_levels_present <- intersect(
     names(agree_disagree_colors),
@@ -214,6 +233,6 @@ export <- function(data, v1) {
   
 }
 
-export(data, q31_r1)
+export(data, q45)
 
 
