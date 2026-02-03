@@ -1,8 +1,5 @@
 #### CODE FOR VALUE LABELS FROM CENTIMENT
 
-###NOTE: WHAT TO DO ABOUT THE RESPONDANT WHO KEYED IN "BROTHER" FOR Q57: WHAT IS YOUR GENDER?
-
-
 rm(list = ls())
 
 library(haven)
@@ -47,9 +44,9 @@ data <- data %>%
                             q4 == "Other law enforcement agency (University Police, Harbor Police," ~ "Other",
                             q4 == "Transit Police Department or Airport Police Department" ~ "Other",
                             q4 == "Probation or Parole Agency" ~ "DOC, Supervision"),
-         race_ethn = case_when(!is.na(q58_4) ~ q58_4,
-                          !is.na(q58_3) ~ q58_3,
-                          !is.na(q58_7) ~ q58_7,
+         race_ethn = case_when(q58_4 != "" ~ q58_4,
+                          q58_3 != "" ~ q58_3,
+                          q58_7 != "" ~ q58_7,
                           TRUE ~ "Other"),
          age = case_when(q59 == "18-24" ~ "18-34",
                          q59 == "25-34" ~ "18-34",
@@ -92,31 +89,6 @@ tabs <- function(data, v1) {
 
 #le_type <- tabs(data, q4)
 
-
-ttabs <- function(data, v1) {
-  total <- nrow(data) 
-  
-  
-  df <- data %>%
-    group_by(as_factor({{v1}})) %>%
-    summarise(n_cases = n()) |>
-    mutate(pct = n_cases/total
-    ) %>%
-    arrange(-pct)
-  
-  df <- df %>%
-    mutate(descr = paste0(sub("^.*\\] ?", "", attributes(df[[1]])$label), " "))
-  
-  
-  colnames(df) <- c("question", "n_cases", "pct", "descr")
-  
-  return(df)
-  
-}
-
-#le_type <- ttabs(data, q4)
-
-
 crosstabs <- function (data, v1, v2) {
   
   total_df <- data %>%
@@ -133,8 +105,7 @@ crosstabs <- function (data, v1, v2) {
   
 }
 
-test <- crosstabs(data, q46, q57)
-
+#test <- crosstabs(data, q46, q57)
 
 auto <- function (data, v1) {
 
