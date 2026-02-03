@@ -15,7 +15,7 @@ library(data.table)
 library(ggplot2)
 library(scales)
 
-setwd("~/Documents/GitHub/RCH-Law-Enforcement-Survey")
+# setwd("~/Documents/GitHub/RCH-Law-Enforcement-Survey")
 
 options(dplyr.print_max = 1e9)
 
@@ -39,17 +39,25 @@ data <- data %>%
                             q3 %in% 10:39 ~ "10 or more years",
                             q3 == NA ~ NA),
          agency = case_when(q4 == "Sheriff’s Office or Sheriff’s Department" ~ "Sheriff",
-                            q4 == "Department of Corrections" ~ "DOC, Supervision",
+                            q4 == "Department of Corrections" ~ "Corrections/Supervision",
                             q4 == "Local law enforcement agency (e.g. municipal police department," ~ "Local",
                             q4 == "State Police or State Highway Patrol" ~ "State",
                             q4 == "Federal Law Enforcement Agency (e.g., FBI, DEA, ATF, U.S. Marsha" ~ "Federal",
                             q4 == "Department of Homeland Security Agency (e.g., CBP, ICE, USSS, TS" ~ "Federal",
                             q4 == "Other law enforcement agency (University Police, Harbor Police," ~ "Other",
                             q4 == "Transit Police Department or Airport Police Department" ~ "Other",
-                            q4 == "Probation or Parole Agency" ~ "DOC, Supervision"),
-         race_ethn = case_when(!is.na(q58_4) ~ q58_4,
-                          !is.na(q58_3) ~ q58_3,
-                          !is.na(q58_7) ~ q58_7,
+                            q4 == "Probation or Parole Agency" ~ "Corrections/Supervision"),
+         role = case_when(q5 == "Investigator/Detective" ~ q5,
+                          q5 == "Custodial Officer/Deputy in a jail or detention center" ~ "Custodial Officer", 
+                          q5 == "Supervisory role (e.g., Sergeant, Lieutenant, Captain, Major, As" ~ "Supervisory role",
+                          q5_other_key_in %in% c("Correction officer", "Correctional officer", "Corrections officer", "Inside")  ~ "Custodial Officer", 
+                          q5_other_key_in %in% c("Probation and Parole officer", "Probation officer", "Probation officer aide", "Probation Officer") ~ "Probation Officer",
+                          q5 == "Patrol or Field Officer/Deputy" & q4 != "Probation or Parole Agency" ~ "Patrol or Field Officer/Deputy",
+                          q5 == "Patrol or Field Officer/Deputy" & q4 == "Probation or Parole Agency" ~ "Probation Officer",
+                          TRUE ~ "Other"),
+         race_ethn = case_when(q58_4 != "" ~ q58_4,
+                          q58_3 != "" ~ q58_3,
+                          q58_7 != "" ~ q58_7,
                           TRUE ~ "Other"),
          age = case_when(q59 == "18-24" ~ "18-34",
                          q59 == "25-34" ~ "18-34",
@@ -57,13 +65,7 @@ data <- data %>%
                          q59 == "45-54" ~ "45-54",
                          q59 == "55-65" ~ "55+",
                          q59 == "65+" ~ "55+"), 
-         # urban = case_when(zipdense2 == 1 ~ "Urban",
-         #                   zipdense2 == 2 ~ "Suburban",
-         #                   zipdense2 == 3 ~ "Rural"),
-         # party = case_when(partyid == 1 ~ "Democrat",
-         #                   partyid == 2 ~ "Republican",
-         #                   partyid %in% 3:4 ~ "Other Party/No Party"), #combined bc n for "Other Party" was too small
-         gender = case_when(q57 == "Woman" ~ "Woman",
+           gender = case_when(q57 == "Woman" ~ "Woman",
                             q57 == "Man" ~ "Man",
                             TRUE ~ "Man"))#key in brother
 
@@ -90,30 +92,6 @@ tabs <- function(data, v1) {
   
 }
 
-#le_type <- tabs(data, q4)
-
-
-ttabs <- function(data, v1) {
-  total <- nrow(data) 
-  
-  
-  df <- data %>%
-    group_by(as_factor({{v1}})) %>%
-    summarise(n_cases = n()) |>
-    mutate(pct = n_cases/total
-    ) %>%
-    arrange(-pct)
-  
-  df <- df %>%
-    mutate(descr = paste0(sub("^.*\\] ?", "", attributes(df[[1]])$label), " "))
-  
-  
-  colnames(df) <- c("question", "n_cases", "pct", "descr")
-  
-  return(df)
-  
-}
-
 #le_type <- ttabs(data, q4)
 
 
@@ -133,8 +111,6 @@ crosstabs <- function (data, v1, v2) {
   
 }
 
-test <- crosstabs(data, q46, q57)
-
 
 auto <- function (data, v1) {
 
@@ -146,6 +122,9 @@ auto <- function (data, v1) {
     mutate(domain = "gender")
 
 
+  role <- crosstabs(data, {{v1}}, role) |> 
+    mutate(domain = "role") 
+  
   agency <- crosstabs(data, {{v1}}, agency) %>%
     mutate(domain = "agency")
 
@@ -158,6 +137,7 @@ auto <- function (data, v1) {
   colnames(age) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   colnames(gender) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   colnames(agency) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
+  colnames(role) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   colnames(tenure) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   colnames(race) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
 
@@ -174,12 +154,10 @@ auto <- function (data, v1) {
 
   colnames(total) <- c("answer",  "n_cases", "total", "pct", "subcategory", "domain")
 
-  df <- na.omit(rbind(total, race, gender, agency, tenure, age)) %>%
+  df <- na.omit(rbind(total, race, gender, role, agency, tenure, age)) %>%
     select(domain, subcategory, answer, pct) %>%
     mutate(pct = round(pct * 100)) %>%
     arrange(domain, subcategory)
-
-
 
   return(df)
 
@@ -207,7 +185,7 @@ export <- function(data, v1) {
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
   
-  write.csv(q, file = file.path("output", paste0(var2, ".csv")), row.names = F)
+#  write.csv(q, file = file.path("output", paste0(var2, ".csv")), row.names = F)
   
   print(plot)
   
@@ -215,4 +193,6 @@ export <- function(data, v1) {
   
 }
 
-q52 <- export(data, q52)
+export(data, q34_r4)
+
+
