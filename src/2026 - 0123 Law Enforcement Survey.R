@@ -32,7 +32,8 @@ write.csv(questions, "output/questions as a list.csv")
 
 print(unique(data$q59))
 
-data <- data %>%
+data <- data |> 
+  filter(!grepl("aide", q5_other_key_in)) |>    # remove probation aide from sample
   mutate(
          tenure = case_when(q3 %in% 0:4 ~ "0-4 years",
                             q3 %in% 5:9 ~ "5-9 years",
@@ -165,6 +166,12 @@ auto <- function (data, v1) {
 
 q52 <- auto(data, q52)
 
+agree_disagree_colors <- c(
+  "Strongly agree"      = "#08306B",  # dark blue
+  "Somewhat agree"      = "#6BAED6",  # light blue
+  "Somewhat disagree"   = "#FDBE85",  # light orange
+  "Strongly disagree"   = "#D94801"   # dark orange
+)
 
 export <- function(data, v1) {
   
@@ -183,7 +190,21 @@ export <- function(data, v1) {
          y = "Percentage",
          fill = "Response") +
     theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    theme(legend.position = "none")
+  
+  agree_levels_present <- intersect(
+    names(agree_disagree_colors),
+    unique(q$answer)
+  )
+  
+  if (length(agree_levels_present) > 0) {
+    plot <- plot +
+      scale_fill_manual(
+        values = agree_disagree_colors,
+        breaks = agree_levels_present
+      )
+  }
   
 #  write.csv(q, file = file.path("output", paste0(var2, ".csv")), row.names = F)
   
@@ -193,6 +214,6 @@ export <- function(data, v1) {
   
 }
 
-export(data, q34_r4)
+export(data, q31_r1)
 
 
