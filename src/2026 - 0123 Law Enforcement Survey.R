@@ -30,7 +30,7 @@ questions <- questions[1:2]
 colnames(questions) <- c("variable", "question")
 write.csv(questions, "output/questions as a list.csv")
 
-
+print(unique(data$q59))
 
 data <- data %>%
   mutate(
@@ -40,22 +40,22 @@ data <- data %>%
                             q3 == NA ~ NA),
          agency = case_when(q4 == "Sheriff’s Office or Sheriff’s Department" ~ "Sheriff",
                             q4 == "Department of Corrections" ~ "DOC, Supervision",
-                            q4 == "Local law enforcement agency (e.g. municipal police department, county police department, tribal police department)" ~ "Local",
+                            q4 == "Local law enforcement agency (e.g. municipal police department," ~ "Local",
                             q4 == "State Police or State Highway Patrol" ~ "State",
-                            q4 == "Federal Law Enforcement Agency (e.g., FBI, DEA, ATF, U.S. Marshals Service)" ~ "Federal",
-                            q4 == "Department of Homeland Security Agency (e.g., CBP, ICE, USSS, TSA, U.S. Coast Guard)" ~ "Federal",
-                            q4 == "Other law enforcement agency (University Police, Harbor Police, Hospital Police, Housing Authority Police)" ~ "Other",
+                            q4 == "Federal Law Enforcement Agency (e.g., FBI, DEA, ATF, U.S. Marsha" ~ "Federal",
+                            q4 == "Department of Homeland Security Agency (e.g., CBP, ICE, USSS, TS" ~ "Federal",
+                            q4 == "Other law enforcement agency (University Police, Harbor Police," ~ "Other",
                             q4 == "Transit Police Department or Airport Police Department" ~ "Other",
                             q4 == "Probation or Parole Agency" ~ "DOC, Supervision"),
-         race_ethn = case_when(!is.na(q58_4) ~ "Latino",
-                          !is.na(q58_3) ~ "Black",
-                          !is.na(q58_7) ~ "White",
+         race_ethn = case_when(!is.na(q58_4) ~ q58_4,
+                          !is.na(q58_3) ~ q58_3,
+                          !is.na(q58_7) ~ q58_7,
                           TRUE ~ "Other"),
          age = case_when(q59 == "18-24" ~ "18-34",
                          q59 == "25-34" ~ "18-34",
                          q59 == "35-44" ~ "35-44",
                          q59 == "45-54" ~ "45-54",
-                         q59 == "55-64" ~ "55+",
+                         q59 == "55-65" ~ "55+",
                          q59 == "65+" ~ "55+"), 
          # urban = case_when(zipdense2 == 1 ~ "Urban",
          #                   zipdense2 == 2 ~ "Suburban",
@@ -66,6 +66,9 @@ data <- data %>%
          gender = case_when(q57 == "Woman" ~ "Woman",
                             q57 == "Man" ~ "Man",
                             TRUE ~ "Man"))#key in brother
+
+race_check <- data |>
+  select(q58_1, q58_2, q58_3, q58_4, q58_5, q58_6, q58_7, race_ethn)
 
 ###ADDITIONAL XTABS - urbanicity, live where you work, income
 
