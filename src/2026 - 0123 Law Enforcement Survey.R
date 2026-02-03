@@ -14,6 +14,7 @@ library(stringi)
 library(data.table)
 library(ggplot2)
 library(scales)
+library(rlang)
 
 # setwd("~/Documents/GitHub/RCH-Law-Enforcement-Survey")
 
@@ -22,6 +23,9 @@ options(dplyr.print_max = 1e9)
 data <- read_sav("input/Law-enforcement-survey-character.sav")
 
 data <- clean_names(data)
+
+names(data) <- gsub("_r[0-9]+$", "", names(data))
+
 
 questions <- sapply(data, attr, "label")
 questions <- as.data.frame(questions)
@@ -70,8 +74,8 @@ data <- data |>
                             q57 == "Man" ~ "Man",
                             TRUE ~ "Man"), #key in brother
          location = case_when(q55 == "Yes, I live in the same neighborhood." ~ "Neighborhood",
-                              q55 == "Yes, I live in the same city." ~ "City",
-                              q55 == "Yes, I live in the same metro area." ~ "Metro area",
+                              q55 == "Yes, I live in the same city." ~ "City or metro area",
+                              q55 == "Yes, I live in the same metro area." ~ "City or metro area",
                               TRUE ~ "Outside metro area"))
 
 race_check <- data |>
@@ -235,4 +239,56 @@ export <- function(data, v1) {
 
 export(data, q45)
 
+patrol <- data |> 
+  subset(role == "Patrol or Field Officer/Deputy")
 
+export(patrol, q17)
+
+time_questions_lookup <- questions %>%
+  mutate(
+    question = sub("^.* \\| ", "", question)
+  )
+
+question_lookup <- setNames(
+  time_questions_lookup$question,
+  time_questions_lookup$variable
+)
+
+timeq <-  function(v1) {
+  
+    denominator <- data |> 
+      group_by(role) |> 
+      summarise(total = n()) 
+    
+    df <- data %>%
+      mutate(frequency = forcats::fct_relevel(
+        {{ v1 }},
+        "Never",
+        "Often (several times a week)",
+        "Occasionally (several times a year)",
+        "Rarely (once every few years)"
+      )
+      ) |> 
+      group_by(
+        role, 
+        frequency) %>%
+      summarise(n_cases = n()) |>
+      left_join(denominator) |> 
+      mutate(pct = round(n_cases/total * 100),
+             task =  question_lookup[as_name(ensym(v1))],
+             pct = case_when(frequency == "Never" ~ 100 - pct,
+                             TRUE ~ pct), 
+             frequency = case_when(frequency == "Never" ~ "Ever",
+                                   TRUE ~ frequency))
+    
+    
+    return(df)
+    
+}
+ 
+
+timeq(q17)
+timeq(q18)
+timeq(q19)
+timeq(q20)
+timeq(q21)
