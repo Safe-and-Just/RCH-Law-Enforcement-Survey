@@ -1,5 +1,8 @@
 #### CODE FOR VALUE LABELS FROM CENTIMENT
 
+###NOTE: WHAT TO DO ABOUT THE RESPONDANT WHO KEYED IN "BROTHER" FOR Q57: WHAT IS YOUR GENDER?
+
+
 rm(list = ls())
 
 library(haven)
@@ -19,7 +22,6 @@ options(dplyr.print_max = 1e9)
 data <- read_sav("input/Law-enforcement-survey-character.sav")
 
 data <- clean_names(data)
-data_labels <- clean_names(data_labels)
 
 questions <- sapply(data, attr, "label")
 questions <- as.data.frame(questions)
@@ -29,6 +31,46 @@ colnames(questions) <- c("variable", "question")
 write.csv(questions, "output/questions as a list.csv")
 
 
+
+data <- data %>%
+  mutate(
+         tenure = case_when(q3 %in% 0:4 ~ "0-4 years",
+                            q3 %in% 5:9 ~ "5-9 years",
+                            q3 %in% 10:39 ~ "10 or more years",
+                            q3 == NA ~ NA),
+         agency = case_when(q4 == "Sheriff’s Office or Sheriff’s Department" ~ "Sheriff",
+                            q4 == "Department of Corrections" ~ "DOC, Supervision",
+                            q4 == "Local law enforcement agency (e.g. municipal police department, county police department, tribal police department)" ~ "Local",
+                            q4 == "State Police or State Highway Patrol" ~ "State",
+                            q4 == "Federal Law Enforcement Agency (e.g., FBI, DEA, ATF, U.S. Marshals Service)" ~ "Federal",
+                            q4 == "Department of Homeland Security Agency (e.g., CBP, ICE, USSS, TSA, U.S. Coast Guard)" ~ "Federal",
+                            q4 == "Other law enforcement agency (University Police, Harbor Police, Hospital Police, Housing Authority Police)" ~ "Other",
+                            q4 == "Transit Police Department or Airport Police Department" ~ "Other",
+                            q4 == "Probation or Parole Agency" ~ "DOC, Supervision"),
+         race_ethn = case_when(!is.na(q58_4) ~ "Latino",
+                          !is.na(q58_3) ~ "Black",
+                          !is.na(q58_7) ~ "White",
+                          TRUE ~ "Other"),
+         age = case_when(q59 == "18-24" ~ "18-34",
+                         q59 == "25-34" ~ "18-34",
+                         q59 == "45-54" ~ "45-54",
+                         q59 == "55-64" ~ "55+",
+                         q59 == "65+" ~ "55+"), 
+         # urban = case_when(zipdense2 == 1 ~ "Urban",
+         #                   zipdense2 == 2 ~ "Suburban",
+         #                   zipdense2 == 3 ~ "Rural"),
+         # party = case_when(partyid == 1 ~ "Democrat",
+         #                   partyid == 2 ~ "Republican",
+         #                   partyid %in% 3:4 ~ "Other Party/No Party"), #combined bc n for "Other Party" was too small
+         gender = case_when(q57 == "Woman" ~ "Woman",
+                            q57 == "Man" ~ "Man",
+                            TRUE ~ "Man"))#key in brother
+
+###ADDITIONAL XTABS - urbanicity, live where you work, income
+
+# Define main sample
+
+#### function
 
 tabs <- function(data, v1) {
   total <- nrow(data) 
@@ -74,11 +116,11 @@ ttabs <- function(data, v1) {
 crosstabs <- function (data, v1, v2) {
   
   total_df <- data %>%
-    group_by(as_factor({{v2}})) %>%
+    group_by({{v2}}) %>%
     summarise(total = n())
   
   df <- data %>%
-    group_by(as_factor({{v1}}), as_factor({{v2}})) %>%
+    group_by({{v1}}, {{v2}}) %>%
     summarise(n_cases = n()) %>%
     left_join(total_df) %>%
     mutate(pct = n_cases/total)
@@ -87,80 +129,86 @@ crosstabs <- function (data, v1, v2) {
   
 }
 
-#test <- crosstabs(data, q4, q57)
-# 
-# 
-# ccrosstabs <- function (data, v1, v2) {
-#   
-#   var2 <- as.character(substitute(v2))
-#   
-#   labels <- data %>%
-#     group_by({{v1}}, {{v2}}) %>%
-#     summarise(n_from_data = n()) %>%
-#     mutate(answer = as.character(as_factor({{v1}})),
-#            subcategory = as.character(as_factor({{v2}})),
-#            q = var2) %>%
-#     select(1,2,4,5, 6)
-#   
-#   colnames(labels) <- c("v1", "v2", "answer", "subcategory", "q")
-#   
-#   
-#   total_df <- data %>%
-#     group_by(({{v2}})) %>%
-#     summarise(total = n())
-#   
-#   df <- data %>%
-#     group_by(({{v1}}), ({{v2}})) %>%
-#     summarise(n_cases = n(),
-#               weighted_subtotal = sum(wt)) %>%
-#     left_join(weighted_total_df) %>%
-#     mutate(pct = weighted_subtotal/weighted_total) %>%
-#     arrange(-pct)
-#   
-#   
-#   colnames(df) <- c("v1", "v2", "n_cases", "weighted_subtotal", "weighted_total", "pct")
-#   
-#   df <- left_join(df, labels) %>%
-#     select("answer", "subcategory", "pct", "weighted_subtotal", "weighted_total", "n_cases", "q")
-#   
-#   return(df)
-#   
-# }
-# 
-# 
-# ccrosstabs <- function (data, v1, v2) {
-#   
-#   var2 <- as.character(substitute(v2))
-#   
-#   labels <- data %>%
-#     group_by({{v1}}, {{v2}}) %>%
-#     summarise(n_from_data = n()) %>%
-#     mutate(answer = as.character(as_factor({{v1}})),
-#            subcategory = as.character(as_factor({{v2}})),
-#            q = var2) %>%
-#     select(1,2,4,5, 6)
-#   
-#   colnames(labels) <- c("v1", "v2", "answer", "subcategory", "q")
-#   
-#   
-#   weighted_total_df <- data %>%
-#     group_by(({{v2}})) %>%
-#     summarise(weighted_total = sum(wt))
-#   
-#   df <- data %>%
-#     group_by(({{v1}}), ({{v2}})) %>%
-#     summarise(n_cases = n(),
-#               weighted_subtotal = sum(wt)) %>%
-#     left_join(weighted_total_df) %>%
-#     mutate(pct = weighted_subtotal/weighted_total) %>%
-#     arrange(-pct)
-#   
-#   
-#   colnames(df) <- c("v1", "v2", "n_cases", "weighted_subtotal", "weighted_total", "pct")
-#   
-#   df <- left_join(df, labels) %>%
-#     select("answer", "subcategory", "pct", "weighted_subtotal", "weighted_total", "n_cases", "q")
-#   
-#   return(df)
-#   
-# }
+test <- crosstabs(data, q46, q57)
+
+
+auto <- function (data, v1) {
+
+  age <- crosstabs(data, {{v1}}, age) %>%
+    mutate(domain = "age") %>%
+    arrange(domain)
+
+  gender <- crosstabs(data, {{v1}}, gender) %>%
+    mutate(domain = "gender")
+
+
+  agency <- crosstabs(data, {{v1}}, agency) %>%
+    mutate(domain = "agency")
+
+  tenure <- crosstabs(data, {{v1}}, tenure) %>%
+    mutate(domain = "tenure")
+
+  race <- crosstabs(data, {{v1}}, race_ethn) %>%
+    mutate(domain = "race") 
+
+  colnames(age) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
+  colnames(gender) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
+  colnames(agency) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
+  colnames(tenure) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
+  colnames(race) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
+
+  total <- nrow(data)
+
+  total <- data %>%
+    group_by(as_factor({{v1}})) %>%
+    summarise(n_cases = n()) %>%
+    mutate(total = total,
+           pct = (n_cases/total),
+           subcategory = "ALL",
+           domain = "ALL")
+
+
+  colnames(total) <- c("answer",  "n_cases", "total", "pct", "subcategory", "domain")
+
+  df <- na.omit(rbind(total, race, gender, agency, tenure, age)) %>%
+    select(domain, subcategory, answer, pct) %>%
+    mutate(pct = round(pct * 100)) %>%
+    arrange(domain, subcategory)
+
+
+
+  return(df)
+
+}
+
+q52 <- auto(data, q52)
+
+
+export <- function(data, v1) {
+  
+  q <- auto(data, {{v1}}) 
+  
+  var <- as.character(substitute(v1))
+  var2 <- deparse(substitute(v1))
+  title <- questions[questions$variable == var, ]
+  
+  plot <- 
+    ggplot(q, aes(x = subcategory, y = pct, fill = answer)) +
+    geom_col(position = "dodge") +
+    facet_wrap(~ domain, scales = "free_x") +
+    labs(title = (str_wrap(title$question)),
+         x = "Subcategory",
+         y = "Percentage",
+         fill = "Response") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  write.csv(q, file = file.path("output", paste0(var2, ".csv")), row.names = F)
+  
+  print(plot)
+  
+  print(q)
+  
+}
+
+q52 <- export(data, q52)
