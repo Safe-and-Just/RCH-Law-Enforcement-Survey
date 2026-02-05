@@ -476,29 +476,6 @@ write.csv(beyond, "output/beyond.csv", row.names = F)
 
 ###### How do officers spend their time #############
 
-
-
-df <- data %>%
-  mutate(frequency = case_when({{v1}} == "Never" ~ "never",
-                               {{v1}} == "Often (several times a week)" ~ "weekly",
-                               {{v1}} == "Occasionally (several times a year)" ~ "yearly",
-                               {{v1}} == "Rarely (once every few years)" ~ "rarely"
-  )
-  ) |> 
-  group_by(
-    role, 
-    frequency) %>%
-  summarise(n_cases = n()) |> 
-  pivot_wider(names_from = "frequency",
-              values_from = "n_cases") |> 
-  mutate(total = never + weekly + yearly + rarely,
-         Ever = total - never,
-         `At least a few times a year` = weekly + yearly,
-         `A few times a week` = weekly) |> 
-  mutate(across(6:8, ~ round(.x / total * 100))) |> 
-  select(role, Ever, `At least a few times a year` ,  `A few times a week`) |> 
-  pivot_longer(!role)
-
 timeq <- function(v1) {
   
   df <- data %>%
