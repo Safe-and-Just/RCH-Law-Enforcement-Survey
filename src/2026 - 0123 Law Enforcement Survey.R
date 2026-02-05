@@ -190,7 +190,6 @@ q52 <- auto(data, q52)
 q51 <- auto(data, q51)
 q50 <- auto(data, q50)
 q50 <- auto(data, q50)
-q17 <- auto(data, q17)
 
 
 agree_stack_levels <- c(
@@ -689,10 +688,62 @@ or_df <- or_df |>
 
 or_df <- or_df |>
   mutate(
+    or = (`1_Agree` / `1_Disagree`) / (`0_Agree` / `0_Disagree`)
+  )
+
+or_df <- or_df |>
+  mutate(
     or_label = round(or, 2),
     direction = ifelse(or > 1, "Above 1", "Below 1")
   )
 
+
+rr_df <- programs_summary_table |>
+  filter(support %in% c("Agree", "Disagree")) |>
+  group_by(program, worked, support) |>
+  summarise(n = sum(n), .groups = "drop") |>
+  pivot_wider(
+    names_from = c(worked, support),
+    values_from = n,
+    names_sep = "_"
+  ) |>
+  mutate(
+    risk_1 = `1_Agree` / (`1_Agree` + `1_Disagree`),
+    risk_0 = `0_Agree` / (`0_Agree` + `0_Disagree`),
+    rr = risk_1 / risk_0,
+    percent_more_likely = (rr - 1) * 100
+  )
+
+rrp1 <- ggplot(rr_df, aes(x = percent_more_likely, y = reorder(program, percent_more_likely))) +
+  geom_col(aes(fill = percent_more_likely > 0)) +
+  geom_text(aes(label = paste0(round(percent_more_likely), "%")), 
+            hjust = ifelse(rr_df$percent_more_likely > 0, -0.15, 1.15), 
+            size = 4) +
+  scale_fill_manual(values = c("TRUE" = "#003972", "FALSE" = "#f47d20"), 
+                    guide = "none") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  labs(
+    x = "Percent more likely to agree",
+    y = NULL,
+    title = "Effect of working on agreement by program"
+  ) +
+  theme_minimal() +
+  xlim(min(rr_df$percent_more_likely) * 1.2, max(rr_df$percent_more_likely) * 1.2)
+
+rrp1
+
+rrp2 <- ggplot(rr_df, aes(x = rr, y = reorder(program, rr))) +
+  geom_point(size = 4, color = "#003972") +
+  geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
+  geom_text(aes(label = round(rr, 2)), hjust = -0.4, size = 4) +
+  labs(
+    x = "Risk Ratio (RR)",
+    y = NULL,
+    title = "Risk ratios for agreement by program"
+  ) +
+  theme_minimal()
+
+rrp2
 
 p6 <- ggplot(or_df, aes(x = reorder(program, or), y = or)) +
   geom_segment(aes(xend = program, y = 1, yend = or), color = "gray80") +
@@ -712,11 +763,100 @@ p6 <- ggplot(or_df, aes(x = reorder(program, or), y = or)) +
     axis.text.x = element_text(face = "bold"),
     plot.title = element_text(face = "bold", hjust = 0.5)
   )
+
 p6
 
-
 ####### BENEFITS OF MENTAL HEALTH RESPONDERS
+programs_temp <- programs |>
+  mutate(across(q41_1:q41_5, ~ ifelse(is.na(.) | . == "", 0, 1)),
+         selected_any = pmax(q41_1, q41_2, q41_3, q41_4, q41_5))
 
+mh_summary_table <- programs_temp |>
+  pivot_longer(
+    cols = q41_1:q41_5,
+    names_to = "benefit",
+    values_to = "response"
+  ) |>
+  mutate(response_binary = response) |>
+  group_by(benefit) |>
+  summarise(
+    n = sum(response_binary),
+    percent = mean(response_binary) * 100,
+    .groups = "drop"
+  ) |>
+  
+  bind_rows(
+    tibble(
+      benefit = "Selected any",
+      n = sum(programs_temp$selected_any),
+      percent = mean(programs_temp$selected_any) * 100
+    )
+  )
 
+mh_summary_table <- programs |>
+  mutate(across(q41_1:q41_5, ~ ifelse(is.na(.) | . == "", 0, 1)),
+         selected_any = pmax(q41_1, q41_2, q41_3, q41_4, q41_5)) |>
+  pivot_longer(
+    cols = q41_1:q41_5,
+    names_to = "benefit",
+    values_to = "response"
+  ) |>
+  mutate(response_binary = response) |>
+  group_by(benefit) |>
+  summarise(
+    n = sum(response_binary),
+    percent = mean(response_binary) * 100,
+    .groups = "drop"
+  ) |>
+  bind_rows(
+    tibble(
+      benefit = "Selected any",
+      n = sum(programs$selected_any),
+      percent = mean(programs$selected_any) * 100
+    )
+  )
+  
+  
+  
+  pivot_longer(
+    cols = everything(),
+    names_to = "benefit",
+    values_to = "response"
+  ) |>
+  mutate(response_binary = ifelse(is.na(response) | response == "", 0, 1),
+         selected_any = pmax(q41_1, q41_2, q41_3, q41_4, q41_5)) |>
+  group_by(benefit) |>
+  summarise(
+    n = sum(response_binary),
+    percent = mean(response_binary) * 100,
+    n_any = sum(selected_any),
+    percent_any = mean(selected_any) * 100,
+    .groups = "drop"
+  )
 
+benefit_labels <- c(
+  q41_1 = "Clinicians have skills in crisis intervention and make people feel at ease",
+  q41_2 = "Clinicians are able to get on the scene quickly to help someone in crisis",
+  q41_3 = "Clinicians and police can share their expertise and make decisions together about how to handle crises",
+  q41_4 = "Clinicians handle mental health aspects of crisis calls which means officers can return to their other duties more quickly",
+  q41_5 = "Clinicians can ensure people who need help get appropriate services or treatment and can divert them away from the justice system",
+  q41_6 = "None of these seems beneficial to me"
+)
 
+p <- ggplot(mh_summary_table, aes(x = reorder(benefit, percent), y = percent)) + 
+  geom_col(fill = "steelblue") +
+  geom_text(aes(label = paste0(round(percent), "%")),
+            vjust = -0.1, hjust = -0.15, size = 4) +
+  labs(
+    x = "Benefit",
+    y = "Percent",
+    title = "Percentage of Participants Agreeing to Each Benefit"
+  ) +
+  ylim(0, 100) +
+  theme_minimal() +
+  coord_flip() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+p  
+  
+  
