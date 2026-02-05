@@ -15,7 +15,7 @@ library(ggplot2)
 library(scales)
 library(purrr)
 
-setwd("~/Documents/GitHub/RCH-Law-Enforcement-Survey")
+# setwd("~/Documents/GitHub/RCH-Law-Enforcement-Survey")
 
 options(dplyr.print_max = 1e9)
 
@@ -69,7 +69,7 @@ data <- data %>%
          gender = case_when(q57 == "Woman" ~ "Woman",
                             q57 == "Man" ~ "Man",
                             TRUE ~ "Man"), #key in brother
-         location = case_when(q55 == "Yes, I live in the same neighborhood." ~ "Neighborhood",
+         proximity = case_when(q55 == "Yes, I live in the same neighborhood." ~ "Neighborhood",
                               q55 == "Yes, I live in the same city." ~ "City or metro area",
                               q55 == "Yes, I live in the same metro area." ~ "City or metro area",
                               TRUE ~ "Outside metro area"))
@@ -132,13 +132,10 @@ auto <- function (data, v1) {
   role <- crosstabs(data, {{v1}}, role) %>%
     mutate(domain = "role")
 
-  role <- crosstabs(data, {{v1}}, role) |> 
-    mutate(domain = "role") 
-  
   agency <- crosstabs(data, {{v1}}, agency) %>%
     mutate(domain = "agency")
 
-  proximity <- crosstabs(data, {{v1}}, q55) %>%
+  proximity <- crosstabs(data, {{v1}}, proximity) %>%
     mutate(domain = "proximity")
 
   race <- crosstabs(data, {{v1}}, race_ethn) %>%
@@ -147,9 +144,10 @@ auto <- function (data, v1) {
   colnames(age) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   colnames(gender) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   colnames(role) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
-  colnames(location) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   colnames(race) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
-
+  colnames(agency) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
+  colnames(proximity) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
+  
   total <- nrow(data)
 
   total <- data %>%
@@ -163,7 +161,7 @@ auto <- function (data, v1) {
 
   colnames(total) <- c("answer",  "n_cases", "total", "pct", "subcategory", "domain")
 
-  df <- na.omit(rbind(total, race, gender, role, location, age)) %>%
+  df <- na.omit(rbind(total, race, gender, role, proximity, age, agency)) %>%
     select(domain, subcategory, answer, pct) %>%
     mutate(pct = round(pct * 100)) %>%
     arrange(domain, subcategory)
@@ -206,8 +204,6 @@ export <- function(data, v1) {
   print(q)
   
 }
-
-table(data$q36_r2, )
 
 ##Qs where proximity matters
 q51 <- export(data, q51)
