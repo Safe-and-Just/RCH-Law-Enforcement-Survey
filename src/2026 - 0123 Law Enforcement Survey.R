@@ -15,7 +15,7 @@ library(ggplot2)
 library(scales)
 library(purrr)
 
-setwd("~/Documents/GitHub/RCH-Law-Enforcement-Survey")
+# setwd("~/Documents/GitHub/RCH-Law-Enforcement-Survey")
 
 options(dplyr.print_max = 1e9)
 
@@ -132,9 +132,6 @@ auto <- function (data, v1) {
   role <- crosstabs(data, {{v1}}, role) %>%
     mutate(domain = "role")
 
-  role <- crosstabs(data, {{v1}}, role) |> 
-    mutate(domain = "role") 
-  
   agency <- crosstabs(data, {{v1}}, agency) %>%
     mutate(domain = "agency")
 
@@ -147,9 +144,10 @@ auto <- function (data, v1) {
   colnames(age) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   colnames(gender) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   colnames(role) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
-  colnames(location) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   colnames(race) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
-
+  colnames(agency) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
+  colnames(proximity) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
+  
   total <- nrow(data)
 
   total <- data %>%
@@ -163,7 +161,7 @@ auto <- function (data, v1) {
 
   colnames(total) <- c("answer",  "n_cases", "total", "pct", "subcategory", "domain")
 
-  df <- na.omit(rbind(total, race, gender, role, location, age)) %>%
+  df <- na.omit(rbind(total, race, gender, role, proximity, age, agency)) %>%
     select(domain, subcategory, answer, pct) %>%
     mutate(pct = round(pct * 100)) %>%
     arrange(domain, subcategory)
