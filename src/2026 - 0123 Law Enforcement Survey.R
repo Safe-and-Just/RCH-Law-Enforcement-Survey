@@ -132,8 +132,14 @@ auto <- function (data, v1) {
   role <- crosstabs(data, {{v1}}, role) %>%
     mutate(domain = "role")
 
-  location <- crosstabs(data, {{v1}}, location) %>%
-    mutate(domain = "location")
+  role <- crosstabs(data, {{v1}}, role) |> 
+    mutate(domain = "role") 
+  
+  agency <- crosstabs(data, {{v1}}, agency) %>%
+    mutate(domain = "agency")
+
+  proximity <- crosstabs(data, {{v1}}, q55) %>%
+    mutate(domain = "proximity")
 
   race <- crosstabs(data, {{v1}}, race_ethn) %>%
     mutate(domain = "race") 
