@@ -15,6 +15,7 @@ library(ggplot2)
 library(scales)
 library(purrr)
 library(rlang)
+library(forcats)
 
 # setwd("~/Documents/GitHub/RCH-Law-Enforcement-Survey")
 
@@ -31,6 +32,18 @@ questions <- as.data.frame(questions)
 questions <- cbind(names(data), questions)
 questions <- questions[1:2]
 colnames(questions) <- c("variable", "question")
+
+
+questions <- questions %>%
+  mutate(
+    question = sub("^.* \\| ", "", question)
+  )
+
+question_lookup <- setNames(
+  questions$question,
+  questions$variable
+)
+
 write.csv(questions, "output/questions as a list.csv")
 
 #print(unique(data$q59))
@@ -51,13 +64,13 @@ data <- data %>%
                             q4 == "Other law enforcement agency (University Police, Harbor Police," ~ "Other",
                             q4 == "Transit Police Department or Airport Police Department" ~ "Other",
                             q4 == "Probation or Parole Agency" ~ "Corrections/Supervision"),
-         role = case_when(q5 == "Investigator/Detective" ~ q5,
-                          q5 == "Custodial Officer/Deputy in a jail or detention center" ~ "Custodial Officer", 
-                          q5 == "Supervisory role (e.g., Sergeant, Lieutenant, Captain, Major, As" ~ "Supervisory role",
-                          q5_other_key_in %in% c("Correction officer", "Correctional officer", "Corrections officer", "Inside")  ~ "Custodial Officer", 
-                          q5_other_key_in %in% c("Probation and Parole officer", "Probation officer", "Probation officer aide", "Probation Officer") ~ "Probation Officer",
-                          q5 == "Patrol or Field Officer/Deputy" & q4 != "Probation or Parole Agency" ~ "Patrol or Field Officer/Deputy",
-                          q5 == "Patrol or Field Officer/Deputy" & q4 == "Probation or Parole Agency" ~ "Probation Officer",
+         role = case_when(q5 == "Investigators/Detectives" ~ q5,
+                          q5 == "Custodial Officer/Deputy in a jail or detention center" ~ "Custodial Officers", 
+                          q5 == "Supervisory role (e.g., Sergeant, Lieutenant, Captain, Major, As" ~ "Supervisors",
+                          q5_other_key_in %in% c("Correction officer", "Correctional officer", "Corrections officer", "Inside")  ~ "Custodial Officers", 
+                          q5_other_key_in %in% c("Probation and Parole officer", "Probation officer", "Probation officer aide", "Probation Officer") ~ "Probation Officers",
+                          q5 == "Patrol or Field Officer/Deputy" & q4 != "Probation or Parole Agency" ~ "Patrol or Field Officers",
+                          q5 == "Patrol or Field Officer/Deputy" & q4 == "Probation or Parole Agency" ~ "Probation Officers",
                           TRUE ~ "Other"),
          race_ethn = case_when(q58_4 != "" ~ q58_4,
                           q58_3 != "" ~ q58_3,
@@ -69,9 +82,9 @@ data <- data %>%
                          q59 == "45-54" ~ "45-54",
                          q59 == "55-65" ~ "55+",
                          q59 == "65+" ~ "55+"), 
-         gender = case_when(q57 == "Woman" ~ "Woman",
-                            q57 == "Man" ~ "Man",
-                            TRUE ~ "Man"), #key in brother
+         gender = case_when(q57 == "Women" ~ "Women",
+                            q57 == "Men" ~ "Men",
+                            TRUE ~ "Men"), #key in brother
          proximity = case_when(q55 == "Yes, I live in the same neighborhood." ~ "Neighborhood",
                               q55 == "Yes, I live in the same city." ~ "City or metro area",
                               q55 == "Yes, I live in the same metro area." ~ "City or metro area",
@@ -92,7 +105,7 @@ tabs <- function(data, v1) {
   
   
   df <- data %>%
-    group_by(as_factor({{v1}})) %>%
+    group_by(answer = as_factor({{v1}})) %>%
     summarise(n_cases = n()) |>
     mutate(pct = n_cases/total
     )
@@ -179,6 +192,21 @@ q50 <- auto(data, q50)
 q50 <- auto(data, q50)
 q17 <- auto(data, q17)
 
+
+agree_stack_levels <- c(
+  "Strongly agree",
+  "Somewhat agree",
+  "Somewhat disagree",
+  "Strongly disagree"
+)
+
+agree_disagree_colors <- c(
+  "Strongly agree"      = "#08306B",  # dark blue
+  "Somewhat agree"      = "#6BAED6",  # light blue
+  "Somewhat disagree"   = "#FDBE85",  # light orange
+  "Strongly disagree"   = "#D94801"   # dark orange
+)
+
 export <- function(data, v1) {
   
   q <- auto(data, {{v1}}) 
@@ -198,6 +226,19 @@ export <- function(data, v1) {
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
   
+  agree_levels_present <- intersect(
+    names(agree_disagree_colors),
+    unique(q$answer)
+  )
+  
+  if (length(agree_levels_present) > 0) {
+    plot <- plot +
+      scale_fill_manual(
+        values = agree_disagree_colors,
+        breaks = agree_levels_present
+      )
+  }
+  
  # write.csv(q, file = file.path("output", paste0(var2, ".csv")), row.names = F)
   
   print(plot)
@@ -210,53 +251,308 @@ export <- function(data, v1) {
 q51 <- export(data, q51)
 q48 <- export(data, q48)
 q47 <- export(data, q47)
+export(data, q32)
 
+### Functions for agree/disagree stacked charts
+
+agree <- function(data, v1) {
+  
+  q <- auto(data, {{v1}}) 
+  
+  
+  q <- q %>%
+    mutate(
+      answer = factor(answer, levels = agree_stack_levels),
+      agree_group = case_when(
+            answer %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+            answer %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+            TRUE ~ NA_character_
+          ),
+          agree_group = factor(agree_group, levels = c("Agree", "Disagree")),
+          answer = factor(
+            answer,
+            levels = c(
+              "Somewhat agree",
+              "Strongly agree",
+              "Somewhat disagree",
+              "Strongly disagree"
+            )
+          )
+        )
+    
+  
+  var <- as.character(substitute(v1))
+  var2 <- deparse(substitute(v1))
+  title <- questions[questions$variable == var, ]
+  
+  plot_stacked <-
+    ggplot(
+      q,
+      aes(
+        x = interaction(agree_group, subcategory),
+        y = pct,
+        fill = answer
+      )
+    ) +
+    geom_col(width = 0.7) +
+    facet_wrap(~ domain, scales = "free_x") +
+    labs(
+      title = str_wrap(title$question),
+      x = NULL,
+      y = "Percentage",
+      fill = "Response"
+    ) +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      legend.position = "none"
+    )
+  
+  
+  agree_levels_present <- intersect(
+    names(agree_disagree_colors),
+    unique(q$answer)
+  )
+  
+  if (length(agree_levels_present) > 0) {
+    plot_stacked <- plot_stacked +
+      scale_fill_manual(
+        values = agree_disagree_colors,
+        breaks = agree_levels_present
+      )
+  }
+  
+  plot_stacked <- plot_stacked +
+    scale_x_discrete(
+      labels = function(x) sub("^.*\\.", "", x)
+    )
+  # write.csv(q, file = file.path("output", paste0(var2, ".csv")), row.names = F)
+  
+  print(plot_stacked)
+  
+  print(q)
+  
+}
+
+
+
+agree_totals <- function(v1) {
+  
+  q <- tabs(data, {{v1}}) 
+  
+  colnames(q) <- c("answer", "n_cases", "pct")
+  
+  q <- q %>%
+    mutate(
+      pct = round(pct * 100),
+      answer = factor(answer, levels = agree_stack_levels),
+      agree_group = case_when(
+        answer %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+        answer %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+        TRUE ~ NA_character_
+      ),
+      agree_group = factor(agree_group, levels = c("Agree", "Disagree")),
+      answer = factor(
+        answer,
+        levels = c(
+          "Somewhat agree",
+          "Strongly agree",
+          "Somewhat disagree",
+          "Strongly disagree"
+        )
+      )
+    )
+  
+  label_df <- q %>%
+   filter(!is.na(agree_group)) %>%
+   group_by(agree_group) %>%
+   summarise(pct = sum(pct), .groups = "drop")
+  
+  var <- as.character(substitute(v1))
+  var2 <- deparse(substitute(v1))
+  title <- questions[questions$variable == var, ]
+  plot_stacked <-
+    ggplot(
+      q,
+      aes(
+        x = interaction(agree_group),
+        y = pct,
+        fill = answer
+      )
+    ) +
+    geom_col(width = 0.7) +
+    
+    # value labels for Agree / Disagree only
+    geom_text(
+      data = label_df,
+      aes(
+        x = agree_group,
+        y = pct,
+        label = paste0(pct, "%")
+      ),
+      vjust = -0.5,
+      size = 3.5,
+      inherit.aes = FALSE
+    ) +
+    
+    labs(
+      title = str_wrap(title$question),
+      x = NULL,
+      y = NULL,
+      fill = "Response"
+    ) +
+    theme_minimal() +
+    theme(
+      # remove y-axis
+      axis.text.y  = element_blank(),
+      axis.ticks.y = element_blank(),
+      
+      # remove gridlines
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      
+      # keep x labels readable
+      axis.text.x = element_text(angle = 0, hjust = 1),
+      
+      legend.position = "none"
+    )
+  
+  agree_levels_present <- intersect(
+    names(agree_disagree_colors),
+    unique(q$answer)
+  )
+  
+  if (length(agree_levels_present) > 0) {
+    plot_stacked <- plot_stacked +
+      scale_fill_manual(
+        values = agree_disagree_colors,
+        breaks = agree_levels_present
+      )
+  }
+  
+  plot_stacked <- plot_stacked +
+    scale_x_discrete(
+      labels = function(x) sub("^.*\\.", "", x)
+    )
+  # write.csv(q, file = file.path("output", paste0(var2, ".csv")), row.names = F)
+  
+  print(plot_stacked)
+  
+  print(q)
+  
+}
+
+agree_totals(q31)
+agree_totals(q32)
+agree_totals(q33)
+agree_totals(q34)
+
+beyond <- rbind(tabs(data, q32) |> 
+                  mutate(issue = "mental health crises"),
+                tabs(data, q33) |>  
+                  mutate(issue = "drug overdoses"),
+                tabs(data, q34) |> 
+                  mutate(issue = "homelessness"))
+
+beyond <- beyond |> 
+  filter(answer %in% c("Strongly agree", "Somewhat agree")) |> 
+  group_by(issue) |> 
+  summarise(pct = round(sum(pct) * 100))
+
+ggplot(beyond, aes(x = issue, y = pct)) +
+  geom_col(fill = "#08306B") +
+  # Add labels: hjust = -0.2 puts them just outside the bar
+  geom_text(aes(label = paste0(pct, "%"), hjust = -0.2)) + 
+  theme_minimal() +
+  coord_flip() +                 
+  theme(
+    panel.grid.major = element_blank(), 
+    panel.grid.minor = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title = element_blank(),
+    legend.position = "none"
+    )
+
+write.csv(beyond, "output/beyond.csv", row.names = F)
 
 ###### How do officers spend their time #############
 
 
-time_questions_lookup <- questions %>%
-  mutate(
-    question = sub("^.* \\| ", "", question)
-  )
 
-question_lookup <- setNames(
-  time_questions_lookup$question,
-  time_questions_lookup$variable
-)
+df <- data %>%
+  mutate(frequency = case_when({{v1}} == "Never" ~ "never",
+                               {{v1}} == "Often (several times a week)" ~ "weekly",
+                               {{v1}} == "Occasionally (several times a year)" ~ "yearly",
+                               {{v1}} == "Rarely (once every few years)" ~ "rarely"
+  )
+  ) |> 
+  group_by(
+    role, 
+    frequency) %>%
+  summarise(n_cases = n()) |> 
+  pivot_wider(names_from = "frequency",
+              values_from = "n_cases") |> 
+  mutate(total = never + weekly + yearly + rarely,
+         Ever = total - never,
+         `At least a few times a year` = weekly + yearly,
+         `A few times a week` = weekly) |> 
+  mutate(across(6:8, ~ round(.x / total * 100))) |> 
+  select(role, Ever, `At least a few times a year` ,  `A few times a week`) |> 
+  pivot_longer(!role)
 
 timeq <- function(v1) {
   
-  denominator <- data |> 
-    group_by(role) |> 
-    summarise(total = n()) 
-  
   df <- data %>%
-    mutate(frequency = forcats::fct_relevel(
-      {{ v1 }},
-      "Never",
-      "Often (several times a week)",
-      "Occasionally (several times a year)",
-      "Rarely (once every few years)"
+    mutate(frequency = case_when({{v1}} == "Never" ~ "never",
+                                 {{v1}} == "Often (several times a week)" ~ "weekly",
+                                 {{v1}} == "Occasionally (several times a year)" ~ "yearly",
+                                 {{v1}} == "Rarely (once every few years)" ~ "rarely"
     )
     ) |> 
     group_by(
       role, 
       frequency) %>%
-    summarise(n_cases = n()) |>
-    left_join(denominator) |> 
-    mutate(pct = round(n_cases/total * 100),
-           task =  question_lookup[as_name(ensym(v1))],
-           pct = case_when(frequency == "Never" ~ 100 - pct,
-                           TRUE ~ pct), 
-           frequency = case_when(frequency == "Never" ~ "Ever",
-                                 TRUE ~ frequency))
+    summarise(n_cases = n()) |> 
+    pivot_wider(names_from = "frequency",
+                values_from = "n_cases") |> 
+    mutate(total = never + weekly + yearly + rarely,
+           Ever = total - never,
+           `At least a few times a year` = weekly + yearly,
+           `A few times a week` = weekly) |> 
+    mutate(across(6:8, ~ round(.x / total * 100))) |> 
+    select(role, Ever, `At least a few times a year` ,  `A few times a week`) |> 
+    pivot_longer(!role)
   
+  total <- data |> 
+    mutate(frequency = case_when({{v1}} == "Never" ~ "never",
+                                 {{v1}} == "Often (several times a week)" ~ "weekly",
+                                 {{v1}} == "Occasionally (several times a year)" ~ "yearly",
+                                 {{v1}} == "Rarely (once every few years)" ~ "rarely"
+    )
+    ) |> 
+    group_by(
+      frequency) %>%
+    summarise(n_cases = n()) |> 
+    pivot_wider(names_from = "frequency",
+                values_from = "n_cases") |> 
+    mutate(total = never + weekly + yearly + rarely,
+           Ever = total - never,
+           `At least a few times a year` = weekly + yearly,
+           `A few times a week` = weekly) |> 
+    mutate(across(6:8, ~ round(.x / total * 100)),
+           role = "All") |> 
+    select(role, Ever, `At least a few times a year` ,  `A few times a week`) |> 
+    pivot_longer(!role)
   
+  df <- bind_rows(total, df) |> 
+    filter(role %in% c("All", "Custodial Officers", "Patrol or Field Officers", "Supervisors"))
+  
+  print(questions[questions$variable == as.character(substitute(v1)), ])
+
   return(df)
   
 }
-
+questions[questions$variable == "q17", ]
 
 timeq(q17)
 timeq(q18)
@@ -264,6 +560,7 @@ timeq(q19)
 timeq(q20)
 timeq(q21)
 
+agree_totals(q40)
 
 ######## TABLES AND DATA VIZ FOR PROGRAM SUPPORT BY WORKED IN THOSE PROGRAMS
 
