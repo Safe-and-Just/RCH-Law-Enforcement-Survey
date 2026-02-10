@@ -46,8 +46,6 @@ question_lookup <- setNames(
 
 write.csv(questions, "output/questions as a list.csv")
 
-#print(unique(data$q59))
-
 data <- data %>%
   filter(!grepl("aide", q5_other_key_in)) |>    # remove probation aide from sample
   mutate(
@@ -64,8 +62,8 @@ data <- data %>%
                        q4 == "Other law enforcement agency (University Police, Harbor Police," ~ "Other",
                        q4 == "Transit Police Department or Airport Police Department" ~ "Other",
                        q4 == "Probation or Parole Agency" ~ "Corrections/Supervision"),
-    role = case_when(q5 == "Investigators/Detectives" ~ q5,
-                     q4 == "Probation or Parole Agency" | grepl("robation", q5_other_key_in) ~ "Probation Officers",
+    role = case_when(q4 == "Probation or Parole Agency" | grepl("robation", q5_other_key_in) ~ "Probation Officers",
+                     q5 == "Investigator/Detective" ~ "Investigators/Detectives",
                      q5 == "Custodial Officer/Deputy in a jail or detention center" ~ "Custodial Officers", 
                      q5 == "Supervisory role (e.g., Sergeant, Lieutenant, Captain, Major, As" ~ "Supervisors",
                      q5_other_key_in %in% c("Correction officer", "Correctional officer", "Corrections officer", "Inside")  ~ "Custodial Officers", 
@@ -82,8 +80,8 @@ data <- data %>%
                     q59 == "45-54" ~ "45-54",
                     q59 == "55-65" ~ "55+",
                     q59 == "65+" ~ "55+"), 
-    gender = case_when(q57 == "Women" ~ "Women",
-                       q57 == "Men" ~ "Men",
+    gender = case_when(q57 == "Woman" ~ "Women",
+                       q57 == "Man" ~ "Men",
                        TRUE ~ "Men"), #key in brother
     proximity = case_when(q55 == "Yes, I live in the same neighborhood." ~ "Neighborhood",
                           q55 == "Yes, I live in the same city." ~ "City or metro area",
@@ -1001,7 +999,7 @@ q49_all_plot <-
 
 q49_all_plot
 
-#########CALL OUT ROLE ON Q49################
+######### Q49 x role ################
 q49x <- crosstabs(data, q49, role) |>
   mutate(answer = q49) |>
   group_by(role) |>
@@ -1009,7 +1007,7 @@ q49x <- crosstabs(data, q49, role) |>
   ungroup()
 
 q49x_plot <- 
-  ggplot(q49x, aes(x = answer, y = reorder(answer, pct), fill = answer)) +
+  ggplot(q49x, aes(x = answer, y = pct, fill = answer)) +
   geom_col(width = .95) +
   labs(title = "For people who have completed their sentences and remained crime-free, which do you prefer:",
        x = "",
@@ -1018,6 +1016,8 @@ q49x_plot <-
   geom_text(aes(label = paste0(round(pct*100), "%")),
             vjust = -0.5, hjust = 0.5, size = 4) +
   scale_x_discrete(labels = benefit_labels) +
+  scale_y_continuous(limits = c(0,0.75),
+                     labels = scales::percent) +
   scale_fill_manual(
     values = c(
       "Policies that allow them to clear their public records to expand" = "#6BAED6",
@@ -1027,11 +1027,11 @@ q49x_plot <-
   ) +
   facet_wrap(~role, strip.position = "bottom",
              labeller = labeller(role = c(
-               "Custodial Officer" = "Custodial Officer (n = 56)",
-               "Investigator/Detective" = "Investigator/Detective (n = 27)",
-               "Patrol or Field Officer/Deputy" = "Patrol or Field Officer/Deputy (n = 99)",
-               "Probation Officer" = "Probation Officer (n = 10)",
-               "Supervisory role" = "Supervisory role (n = 57)",
+               "Custodial Officers" = "Custodial Officers (n = 55)",
+               "Investigators/Detectives" = "Investigators/Detectives (n = 26)",
+               "Patrol or Field Officers" = "Patrol or Field Officers (n = 99)",
+               "Probation Officers" = "Probation Officers (n = 13)",
+               "Supervisors" = "Supervisors (n = 56)",
                "Other" = "Other (n = 28)"
              ))) +
   guides(fill = guide_legend(reverse = TRUE)) +
@@ -1040,7 +1040,7 @@ q49x_plot <-
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         panel.grid = element_blank(),
-        # strip.text = element_text(face = "plain", hjust = 0),
+        #strip.text = element_text(face = "plain", hjust = 0),
         panel.background = element_blank(),
         plot.background  = element_blank(),
         strip.background = element_blank(),
@@ -1052,4 +1052,88 @@ q49x_plot <-
 
 q49x_plot
 
+##### Q45 all ##########
+q45 <- export(data, q45)
+
+q45 <- tabs(data, q45) |>
+  mutate(answer = factor(answer, levels = answer[order(pct)]))
+
+q45_all_plot <- 
+  ggplot(q45, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = 0.75) +
+  labs(title = "Do you prefer that governments invest more in",
+       x = NULL,
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = 0.25, hjust = -0.15, size = 4) +
+  scale_fill_manual(
+    values = c(
+      "Preventing crime by strengthening communities" = "#6BAED6",
+      "Responding to crime by punishing people who commit crimes" = "#f47d20"
+    )) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  coord_flip() +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        legend.position = "bottom",
+        legend.direction = "vertical")
+
+q45_all_plot
+
+#### Q45 x role #####
+q45x <- crosstabs(data, q45, role) |>
+  mutate(answer = q45) |>
+  group_by(role) |>
+  mutate(answer = factor(answer, levels = answer[order(-pct)])) |>
+  ungroup()
+
+q45x_plot <- 
+  ggplot(q45x, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = .85) +
+  labs(title = "Do you prefer that governments invest more in",
+       x = "",
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = -0.5, hjust = 0.5, size = 4) +
+  # scale_x_discrete(labels = benefit_labels) +
+  scale_fill_manual(
+    values = c(
+      "Preventing crime by strengthening communities" = "#6BAED6",
+      "Responding to crime by punishing people who commit crimes" = "#f47d20"
+    )) +
+  facet_wrap(~role, strip.position = "bottom",
+             labeller = labeller(role = c(
+               "Custodial Officers" = "Custodial Officers (n = 55)",
+               "Investigators/Detectives" = "Investigators/Detectives (n = 26)",
+               "Patrol or Field Officers" = "Patrol or Field Officers (n = 99)",
+               "Probation Officers" = "Probation Officers (n = 13)",
+               "Supervisors" = "Supervisors (n = 56)",
+               "Other" = "Other (n = 28)"
+             ))) +
+  #guides(fill = guide_legend(reverse = TRUE)) +
+  #coord_flip() +
+  scale_y_continuous(limits = c(0,0.75),
+                     labels = scales::percent) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        #strip.text = element_text(face = "plain", hjust = 0),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        strip.placement = "outside",
+        strip.text = element_text(hjust = 0.5),
+        panel.spacing.y = unit(0.5, "lines"),
+        legend.position = "bottom",
+        legend.direction = "vertical")
+
+q45x_plot
 
