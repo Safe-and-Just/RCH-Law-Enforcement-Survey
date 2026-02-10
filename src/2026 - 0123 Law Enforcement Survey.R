@@ -66,12 +66,12 @@ data <- data %>%
                             q4 == "Transit Police Department or Airport Police Department" ~ "Other",
                             q4 == "Probation or Parole Agency" ~ "Corrections/Supervision"),
          role = case_when(q5 == "Investigators/Detectives" ~ q5,
+                          q4 == "Probation or Parole Agency" | grepl("robation", q5_other_key_in) ~ "Probation Officers",
                           q5 == "Custodial Officer/Deputy in a jail or detention center" ~ "Custodial Officers", 
                           q5 == "Supervisory role (e.g., Sergeant, Lieutenant, Captain, Major, As" ~ "Supervisors",
                           q5_other_key_in %in% c("Correction officer", "Correctional officer", "Corrections officer", "Inside")  ~ "Custodial Officers", 
                           q5_other_key_in %in% c("Probation and Parole officer", "Probation officer", "Probation officer aide", "Probation Officer") ~ "Probation Officers",
                           q5 == "Patrol or Field Officer/Deputy" & q4 != "Probation or Parole Agency" ~ "Patrol or Field Officers",
-                          q5 == "Patrol or Field Officer/Deputy" & q4 == "Probation or Parole Agency" ~ "Probation Officers",
                           TRUE ~ "Other"),
          race_ethn = case_when(q58_4 != "" ~ q58_4,
                           q58_3 != "" ~ q58_3,
@@ -90,6 +90,8 @@ data <- data %>%
                               q55 == "Yes, I live in the same city." ~ "City or metro area",
                               q55 == "Yes, I live in the same metro area." ~ "City or metro area",
                               TRUE ~ "Outside metro area"))
+
+table(data$role)
 
 race_check <- data |>
   select(q58_1, q58_2, q58_3, q58_4, q58_5, q58_6, q58_7, race_ethn)
