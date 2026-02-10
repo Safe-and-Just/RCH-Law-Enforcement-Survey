@@ -51,44 +51,44 @@ write.csv(questions, "output/questions as a list.csv")
 data <- data %>%
   filter(!grepl("aide", q5_other_key_in)) |>    # remove probation aide from sample
   mutate(
-         tenure = case_when(q3 %in% 0:4 ~ "0-4 years",
-                            q3 %in% 5:9 ~ "5-9 years",
-                            q3 %in% 10:39 ~ "10 or more years",
-                            q3 == NA ~ NA),
-         agency = case_when(q4 == "Sheriff’s Office or Sheriff’s Department" ~ "Sheriff",
-                            q4 == "Department of Corrections" ~ "Corrections/Supervision",
-                            q4 == "Local law enforcement agency (e.g. municipal police department," ~ "Local",
-                            q4 == "State Police or State Highway Patrol" ~ "State",
-                            q4 == "Federal Law Enforcement Agency (e.g., FBI, DEA, ATF, U.S. Marsha" ~ "Federal",
-                            q4 == "Department of Homeland Security Agency (e.g., CBP, ICE, USSS, TS" ~ "Federal",
-                            q4 == "Other law enforcement agency (University Police, Harbor Police," ~ "Other",
-                            q4 == "Transit Police Department or Airport Police Department" ~ "Other",
-                            q4 == "Probation or Parole Agency" ~ "Corrections/Supervision"),
-         role = case_when(q5 == "Investigators/Detectives" ~ q5,
-                          q4 == "Probation or Parole Agency" | grepl("robation", q5_other_key_in) ~ "Probation Officers",
-                          q5 == "Custodial Officer/Deputy in a jail or detention center" ~ "Custodial Officers", 
-                          q5 == "Supervisory role (e.g., Sergeant, Lieutenant, Captain, Major, As" ~ "Supervisors",
-                          q5_other_key_in %in% c("Correction officer", "Correctional officer", "Corrections officer", "Inside")  ~ "Custodial Officers", 
-                          q5_other_key_in %in% c("Probation and Parole officer", "Probation officer", "Probation officer aide", "Probation Officer") ~ "Probation Officers",
-                          q5 == "Patrol or Field Officer/Deputy" & q4 != "Probation or Parole Agency" ~ "Patrol or Field Officers",
-                          TRUE ~ "Other"),
-         race_ethn = case_when(q58_4 != "" ~ q58_4,
+    tenure = case_when(q3 %in% 0:4 ~ "0-4 years",
+                       q3 %in% 5:9 ~ "5-9 years",
+                       q3 %in% 10:39 ~ "10 or more years",
+                       q3 == NA ~ NA),
+    agency = case_when(q4 == "Sheriff’s Office or Sheriff’s Department" ~ "Sheriff",
+                       q4 == "Department of Corrections" ~ "Corrections/Supervision",
+                       q4 == "Local law enforcement agency (e.g. municipal police department," ~ "Local",
+                       q4 == "State Police or State Highway Patrol" ~ "State",
+                       q4 == "Federal Law Enforcement Agency (e.g., FBI, DEA, ATF, U.S. Marsha" ~ "Federal",
+                       q4 == "Department of Homeland Security Agency (e.g., CBP, ICE, USSS, TS" ~ "Federal",
+                       q4 == "Other law enforcement agency (University Police, Harbor Police," ~ "Other",
+                       q4 == "Transit Police Department or Airport Police Department" ~ "Other",
+                       q4 == "Probation or Parole Agency" ~ "Corrections/Supervision"),
+    role = case_when(q5 == "Investigators/Detectives" ~ q5,
+                     q4 == "Probation or Parole Agency" | grepl("robation", q5_other_key_in) ~ "Probation Officers",
+                     q5 == "Custodial Officer/Deputy in a jail or detention center" ~ "Custodial Officers", 
+                     q5 == "Supervisory role (e.g., Sergeant, Lieutenant, Captain, Major, As" ~ "Supervisors",
+                     q5_other_key_in %in% c("Correction officer", "Correctional officer", "Corrections officer", "Inside")  ~ "Custodial Officers", 
+                     q5_other_key_in %in% c("Probation and Parole officer", "Probation officer", "Probation officer aide", "Probation Officer") ~ "Probation Officers",
+                     q5 == "Patrol or Field Officer/Deputy" & q4 != "Probation or Parole Agency" ~ "Patrol or Field Officers",
+                     TRUE ~ "Other"),
+    race_ethn = case_when(q58_4 != "" ~ q58_4,
                           q58_3 != "" ~ q58_3,
                           q58_7 != "" ~ q58_7,
                           TRUE ~ "Other"),
-         age = case_when(q59 == "18-24" ~ "18-34",
-                         q59 == "25-34" ~ "18-34",
-                         q59 == "35-44" ~ "35-44",
-                         q59 == "45-54" ~ "45-54",
-                         q59 == "55-65" ~ "55+",
-                         q59 == "65+" ~ "55+"), 
-         gender = case_when(q57 == "Women" ~ "Women",
-                            q57 == "Men" ~ "Men",
-                            TRUE ~ "Men"), #key in brother
-         proximity = case_when(q55 == "Yes, I live in the same neighborhood." ~ "Neighborhood",
-                              q55 == "Yes, I live in the same city." ~ "City or metro area",
-                              q55 == "Yes, I live in the same metro area." ~ "City or metro area",
-                              TRUE ~ "Outside metro area"))
+    age = case_when(q59 == "18-24" ~ "18-34",
+                    q59 == "25-34" ~ "18-34",
+                    q59 == "35-44" ~ "35-44",
+                    q59 == "45-54" ~ "45-54",
+                    q59 == "55-65" ~ "55+",
+                    q59 == "65+" ~ "55+"), 
+    gender = case_when(q57 == "Women" ~ "Women",
+                       q57 == "Men" ~ "Men",
+                       TRUE ~ "Men"), #key in brother
+    proximity = case_when(q55 == "Yes, I live in the same neighborhood." ~ "Neighborhood",
+                          q55 == "Yes, I live in the same city." ~ "City or metro area",
+                          q55 == "Yes, I live in the same metro area." ~ "City or metro area",
+                          TRUE ~ "Outside metro area"))
 
 table(data$role)
 
@@ -137,26 +137,26 @@ crosstabs <- function (data, v1, v2) {
 #test <- crosstabs(data, q46, q57)
 
 auto <- function (data, v1) {
-
+  
   age <- crosstabs(data, {{v1}}, age) %>%
     mutate(domain = "age") %>%
     arrange(domain)
-
+  
   gender <- crosstabs(data, {{v1}}, gender) %>%
     mutate(domain = "gender")
-
+  
   role <- crosstabs(data, {{v1}}, role) %>%
     mutate(domain = "role")
-
+  
   agency <- crosstabs(data, {{v1}}, agency) %>%
     mutate(domain = "agency")
-
+  
   proximity <- crosstabs(data, {{v1}}, proximity) %>%
     mutate(domain = "proximity")
-
+  
   race <- crosstabs(data, {{v1}}, race_ethn) %>%
     mutate(domain = "race") 
-
+  
   colnames(age) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   colnames(gender) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   colnames(role) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
@@ -165,7 +165,7 @@ auto <- function (data, v1) {
   colnames(proximity) <- c("answer", "subcategory", "n_cases", "total", "pct", "domain")
   
   total <- nrow(data)
-
+  
   total <- data %>%
     group_by(as_factor({{v1}})) %>%
     summarise(n_cases = n()) %>%
@@ -173,19 +173,19 @@ auto <- function (data, v1) {
            pct = (n_cases/total),
            subcategory = "ALL",
            domain = "ALL")
-
-
+  
+  
   colnames(total) <- c("answer",  "n_cases", "total", "pct", "subcategory", "domain")
-
+  
   df <- na.omit(rbind(total, race, gender, role, proximity, age, agency)) %>%
     select(domain, subcategory, answer, pct) %>%
     mutate(pct = round(pct * 100)) %>%
     arrange(domain, subcategory)
-
-
-
+  
+  
+  
   return(df)
-
+  
 }
 
 q52 <- auto(data, q52)
@@ -239,7 +239,7 @@ export <- function(data, v1) {
       )
   }
   
- # write.csv(q, file = file.path("output", paste0(var2, ".csv")), row.names = F)
+  # write.csv(q, file = file.path("output", paste0(var2, ".csv")), row.names = F)
   
   print(plot)
   
@@ -263,22 +263,22 @@ agree <- function(data, v1) {
     mutate(
       answer = factor(answer, levels = agree_stack_levels),
       agree_group = case_when(
-            answer %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
-            answer %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
-            TRUE ~ NA_character_
-          ),
-          agree_group = factor(agree_group, levels = c("Agree", "Disagree")),
-          answer = factor(
-            answer,
-            levels = c(
-              "Somewhat agree",
-              "Strongly agree",
-              "Somewhat disagree",
-              "Strongly disagree"
-            )
-          )
+        answer %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+        answer %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+        TRUE ~ NA_character_
+      ),
+      agree_group = factor(agree_group, levels = c("Agree", "Disagree")),
+      answer = factor(
+        answer,
+        levels = c(
+          "Somewhat agree",
+          "Strongly agree",
+          "Somewhat disagree",
+          "Strongly disagree"
         )
-    
+      )
+    )
+  
   
   var <- as.character(substitute(v1))
   var2 <- deparse(substitute(v1))
@@ -362,9 +362,9 @@ agree_totals <- function(v1) {
     )
   
   label_df <- q %>%
-   filter(!is.na(agree_group)) %>%
-   group_by(agree_group) %>%
-   summarise(pct = sum(pct), .groups = "drop")
+    filter(!is.na(agree_group)) %>%
+    group_by(agree_group) %>%
+    summarise(pct = sum(pct), .groups = "drop")
   
   var <- as.character(substitute(v1))
   var2 <- deparse(substitute(v1))
@@ -561,7 +561,7 @@ ggplot(beyond, aes(x = issue, y = pct)) +
     axis.ticks.x = element_blank(),
     axis.title = element_blank(),
     legend.position = "none"
-    )
+  )
 
 write.csv(beyond, "output/beyond.csv", row.names = F)
 
@@ -616,7 +616,7 @@ timeq <- function(v1) {
     filter(role %in% c("All", "Custodial Officers", "Patrol or Field Officers", "Supervisors"))
   
   print(questions[questions$variable == as.character(substitute(v1)), ])
-
+  
   return(df)
   
 }
@@ -651,7 +651,7 @@ pairs <- data.frame(
   support = c("q35", "q36", "q37", "q38", "q39", "q40"),
   worked  = c("q42_6", "q42_4",  "q42_3",  "q42_2",  "q42_1",  "q42_5")
 )
-  
+
 program_crosstabs <- lapply(seq_len(nrow(pairs)), function(i) {
   tab <- table(
     worked  = programs[[pairs$worked[i]]],
@@ -728,7 +728,7 @@ cvi_plot <- programs_summary_table |>
     x = NULL,
     y = "Percent of respondents",
     fill = "Worked in program"
-   )+
+  )+
   theme_minimal() +
   theme(
     axis.text.y  = element_blank(),
@@ -846,7 +846,7 @@ mh_summary_table <- programs_temp |>
     names_to = "benefit",
     values_to = "response"
   ) |>
- # mutate(response_binary = response) |>
+  # mutate(response_binary = response) |>
   group_by(benefit) |>
   summarise(
     n = sum(response),
@@ -904,7 +904,7 @@ agree_disagree_colors <- c(
   "Somewhat agree"      = "#6BAED6",  # light blue
   "Somewhat disagree"   = "#FDBE85",  # light orange
   "Strongly disagree"   = "#D94801"   # dark orange
-  )
+)
 
 diversion <- programs_temp |>
   group_by(q42_1) |>
@@ -912,7 +912,7 @@ diversion <- programs_temp |>
             percent = mean(q41_5)) 
 
 # 65% of people who have experience working with mental health clinicians or social workers think it is beneficial that clinicians can ensure people who need help get appropriate services or treatment and can divert them away from the justice system
-  
+
 
 ###### Q48: Shorter or longer prison sentences? ############
 
@@ -1033,14 +1033,14 @@ q49x_plot <-
                "Probation Officer" = "Probation Officer (n = 10)",
                "Supervisory role" = "Supervisory role (n = 57)",
                "Other" = "Other (n = 28)"
-               ))) +
+             ))) +
   guides(fill = guide_legend(reverse = TRUE)) +
   #coord_flip() +
   theme_minimal() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         panel.grid = element_blank(),
-       # strip.text = element_text(face = "plain", hjust = 0),
+        # strip.text = element_text(face = "plain", hjust = 0),
         panel.background = element_blank(),
         plot.background  = element_blank(),
         strip.background = element_blank(),
