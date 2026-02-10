@@ -6,6 +6,7 @@ rm(list = ls())
 
 library(haven)
 library(labelled)
+library(labeller)
 library(tidyverse)
 library(tidylog)
 library(janitor)
@@ -334,7 +335,6 @@ agree <- function(data, v1) {
 }
 
 
-
 agree_totals <- function(v1) {
   
   q <- tabs(data, {{v1}}) 
@@ -446,6 +446,98 @@ agree_totals(q32)
 agree_totals(q33)
 agree_totals(q34)
 
+
+##################################
+###### Q35 to Q40 df #############
+##################################
+
+q35 <- agree_totals(q35) |>
+  mutate(q = "online reporting")
+q36 <- agree_totals(q36) |>
+  mutate(q = "welfare checks")
+q37 <- agree_totals(q37) |>
+  mutate(q = "sobering centers")
+q38 <- agree_totals(q38) |>
+  mutate(q = "traffic collisions")
+q39 <- agree_totals(q39) |>
+  mutate(q = "mh de-escalation")
+q40 <- agree_totals(q40) |>
+  mutate(q = "violence interruption")
+
+q35_40 <- rbind(q35, q36, q37, q38, q39, q40)
+
+q35_40p <- q35_40 |>
+  mutate(
+    agree_group = factor(agree_group, levels = c("Agree", "Disagree")),
+    answer = factor(
+      answer,
+      levels = c(
+        "Somewhat agree",
+        "Strongly agree",
+        "Somewhat disagree",
+        "Strongly disagree"
+      )
+    )
+  )
+
+q35_40p_label <- q35_40p |>
+  filter(!is.na(agree_group)) |>
+  mutate(
+    agree_group = factor(agree_group, levels = c("Agree", "Disagree"))
+  ) |>
+  group_by(q, agree_group) |>
+  summarise(pct = sum(pct), .groups = "drop")
+
+
+##################################
+###### Q35 to Q40 plot #############
+##################################
+
+p_q35_40 <- ggplot(
+  q35_40p,
+  aes(
+    x = agree_group,
+    y = pct,
+    fill = answer
+  )
+) +
+  geom_col(width = 0.85) +
+  
+  geom_text(
+    data = q35_40p_label,
+    aes(
+      x = factor(agree_group, levels = c("Agree", "Disagree")),
+      y = pct,
+      label = paste0(pct, "%")
+    ),
+    vjust = -0.5,
+    size = 3.5,
+    inherit.aes = FALSE
+  ) +
+  
+  facet_wrap(
+    ~ str_wrap(q, 40),
+    scales = "free_x",
+    drop = FALSE
+  ) +
+  
+  scale_fill_manual(values = agree_disagree_colors) +
+  
+  theme_minimal() +
+  theme(
+    axis.text.y  = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid   = element_blank()
+  )
+
+
+
+p_q35_40
+
+##################################
+###### BEYOND ####################
+##################################
+
 beyond <- rbind(tabs(data, q32) |> 
                   mutate(issue = "mental health crises"),
                 tabs(data, q33) |>  
@@ -474,8 +566,9 @@ ggplot(beyond, aes(x = issue, y = pct)) +
 
 write.csv(beyond, "output/beyond.csv", row.names = F)
 
+#######################################################
 ###### How do officers spend their time #############
-
+####################################################
 timeq <- function(v1) {
   
   df <- data %>%
@@ -538,8 +631,9 @@ timeq(q21)
 
 agree_totals(q40)
 
-######## TABLES AND DATA VIZ FOR PROGRAM SUPPORT BY WORKED IN THOSE PROGRAMS
-
+##############################################################################################################
+######## TABLES AND DATA VIZ FOR PROGRAM SUPPORT BY WORKED IN THOSE PROGRAMS #################################
+##############################################################################################################
 support_vars <- c("q35", "q36", "q37", "q38", "q39", "q40")
 worked_vars <- c("q42_6", "q42_1", "q42_2", "q42_3", "q42_4", "q42_5")
 
@@ -592,14 +686,14 @@ programs_summary_table <- programs_summary_table |>
     program == "q35" ~ "online reporting"
   ))
 
-program_ci <- programs_summary_table |>
-  filter(support == "Agree") |>
-  mutate(
-    worked = factor(worked, labels = c("Did not work", "Worked")),
-    se = sqrt(percent * (1 - percent) / n),
-    ci_low = percent - 1.96 * se,
-    ci_high = percent + 1.96 * se
-  )
+# program_ci <- programs_summary_table |>
+#   filter(support == "Agree") |>
+#   mutate(
+#     worked = factor(worked, labels = c("Did not work", "Worked")),
+#     se = sqrt(percent * (1 - percent) / n),
+#     ci_low = percent - 1.96 * se,
+#     ci_high = percent + 1.96 * se
+#   )
 
 p1 <- programs_summary_table |>
   mutate(
@@ -648,31 +742,26 @@ cvi_plot <- programs_summary_table |>
 cvi_plot
 
 #####ODDS RATIOS BETWEEN WORKED GROUPS
-or_df <- programs_summary_table |>
-  filter(support %in% c("Agree", "Disagree")) |>
-  group_by(program, worked, support) |>
-  summarise(n = sum(n), .groups = "drop") |>
-  pivot_wider(
-    names_from = c(worked, support),
-    values_from = n,
-    names_sep = "_"
-  )
+# or_df <- programs_summary_table |>
+#   filter(support %in% c("Agree", "Disagree")) |>
+#   group_by(program, worked, support) |>
+#   summarise(n = sum(n), .groups = "drop") |>
+#   pivot_wider(
+#     names_from = c(worked, support),
+#     values_from = n,
+#     names_sep = "_"
+#   )
 
-or_df <- or_df |>
-  mutate(
-    or = (`1_Agree` / `1_Disagree`) / (`0_Agree` / `0_Disagree`)
-  )
-
-or_df <- or_df |>
-  mutate(
-    or = (`1_Agree` / `1_Disagree`) / (`0_Agree` / `0_Disagree`)
-  )
-
-or_df <- or_df |>
-  mutate(
-    or_label = round(or, 2),
-    direction = ifelse(or > 1, "Above 1", "Below 1")
-  )
+# or_df <- or_df |>
+#   mutate(
+#     or = (`1_Agree` / `1_Disagree`) / (`0_Agree` / `0_Disagree`)
+#   )
+# 
+# or_df <- or_df |>
+#   mutate(
+#     or_label = round(or, 2),
+#     direction = ifelse(or > 1, "Above 1", "Below 1")
+#   )
 
 
 rr_df <- programs_summary_table |>
@@ -685,9 +774,9 @@ rr_df <- programs_summary_table |>
     names_sep = "_"
   ) |>
   mutate(
-    risk_1 = `1_Agree` / (`1_Agree` + `1_Disagree`),
-    risk_0 = `0_Agree` / (`0_Agree` + `0_Disagree`),
-    rr = risk_1 / risk_0,
+    r_1 = `1_Agree` / (`1_Agree` + `1_Disagree`),
+    r_0 = `0_Agree` / (`0_Agree` + `0_Disagree`),
+    rr = r_1 / r_0,
     percent_more_likely = (rr - 1) * 100
   )
 
@@ -742,13 +831,11 @@ p6 <- ggplot(or_df, aes(x = reorder(program, or), y = or)) +
   )
 
 p6
+#####################################################
+####### BENEFITS OF MENTAL HEALTH RESPONSE ##########
+#####################################################
 
-####### BENEFITS OF MENTAL HEALTH RESPONDERS
-programs_temp <- programs |>
-  mutate(across(q41_1:q41_5, ~ ifelse(is.na(.) | . == "", 0, 1)),
-         selected_any = pmax(q41_1, q41_2, q41_3, q41_4, q41_5))
-
-mh_summary_table <- programs_temp |>
+mh_summary_table <- programs_binary |>
   pivot_longer(
     cols = q41_1:q41_5,
     names_to = "benefit",
@@ -762,56 +849,46 @@ mh_summary_table <- programs_temp |>
     .groups = "drop"
   ) |>
   
+  # Step 3: add row for "Selected any"
   bind_rows(
     tibble(
       benefit = "Selected any",
+      n = sum(programs_binary$selected_any),
+      percent = mean(programs_binary$selected_any) * 100
+    )
+  )
+
+programs_temp <- programs |>
+  mutate(across(q41_1:q41_6, ~ ifelse(is.na(.) | . == "", 0, 1)),
+         selected_any = pmax(q41_1, q41_2, q41_3, q41_4, q41_5))
+
+
+mh_summary_table <- programs_temp |>
+  pivot_longer(
+    cols = q41_1:q41_6,
+    names_to = "benefit",
+    values_to = "response"
+  ) |>
+ # mutate(response_binary = response) |>
+  group_by(benefit) |>
+  summarise(
+    n = sum(response),
+    percent = mean(response) * 100,
+    .groups = "drop"
+  ) |>
+  
+  bind_rows(
+    tibble(
+      benefit = "selected_any",
       n = sum(programs_temp$selected_any),
       percent = mean(programs_temp$selected_any) * 100
     )
   )
 
-mh_summary_table <- programs |>
-  mutate(across(q41_1:q41_5, ~ ifelse(is.na(.) | . == "", 0, 1)),
-         selected_any = pmax(q41_1, q41_2, q41_3, q41_4, q41_5)) |>
-  pivot_longer(
-    cols = q41_1:q41_5,
-    names_to = "benefit",
-    values_to = "response"
-  ) |>
-  mutate(response_binary = response) |>
-  group_by(benefit) |>
-  summarise(
-    n = sum(response_binary),
-    percent = mean(response_binary) * 100,
-    .groups = "drop"
-  ) |>
-  bind_rows(
-    tibble(
-      benefit = "Selected any",
-      n = sum(programs$selected_any),
-      percent = mean(programs$selected_any) * 100
-    )
-  )
-  
-  
-  
-  pivot_longer(
-    cols = everything(),
-    names_to = "benefit",
-    values_to = "response"
-  ) |>
-  mutate(response_binary = ifelse(is.na(response) | response == "", 0, 1),
-         selected_any = pmax(q41_1, q41_2, q41_3, q41_4, q41_5)) |>
-  group_by(benefit) |>
-  summarise(
-    n = sum(response_binary),
-    percent = mean(response_binary) * 100,
-    n_any = sum(selected_any),
-    percent_any = mean(selected_any) * 100,
-    .groups = "drop"
-  )
+######## ^^STILL NEED TO WRITE.CSV
 
 benefit_labels <- c(
+  selected_any = "Selected at least one benefit of having clinicians responding to mental health crisis calls",
   q41_1 = "Clinicians have skills in crisis intervention and make people feel at ease",
   q41_2 = "Clinicians are able to get on the scene quickly to help someone in crisis",
   q41_3 = "Clinicians and police can share their expertise and make decisions together about how to handle crises",
@@ -820,10 +897,20 @@ benefit_labels <- c(
   q41_6 = "None of these seems beneficial to me"
 )
 
-p <- ggplot(mh_summary_table, aes(x = reorder(benefit, percent), y = percent)) + 
-  geom_col(fill = "steelblue") +
+mh_benefit_p <- ggplot(mh_summary_table, aes(x = reorder(benefit, percent), y = percent, fill = benefit)) + 
+  geom_col() +
+  scale_fill_manual(values = c(
+    "selected_any" = "#003972",
+    "q41_1" = "#6BAED6",
+    "q41_2" = "#6BAED6",
+    "q41_3" = "#6BAED6",
+    "q41_4" = "#6BAED6",
+    "q41_5" = "#6BAED6",
+    "q41_6" = "#f47d20"
+  )) +
   geom_text(aes(label = paste0(round(percent), "%")),
             vjust = -0.1, hjust = -0.15, size = 4) +
+  scale_x_discrete(labels = benefit_labels) +
   labs(
     x = "Benefit",
     y = "Percent",
@@ -834,6 +921,162 @@ p <- ggplot(mh_summary_table, aes(x = reorder(benefit, percent), y = percent)) +
   coord_flip() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-p  
+mh_benefit_p 
+
+agree_disagree_colors <- c(
+  "Strongly agree"      = "#08306B",  # dark blue
+  "Somewhat agree"      = "#6BAED6",  # light blue
+  "Somewhat disagree"   = "#FDBE85",  # light orange
+  "Strongly disagree"   = "#D94801"   # dark orange
+  )
+
+diversion <- programs_temp |>
+  group_by(q42_1) |>
+  summarize(n = sum(q41_5),
+            percent = mean(q41_5)) 
+
+# 65% of people who have experience working with mental health clinicians or social workers think it is beneficial that clinicians can ensure people who need help get appropriate services or treatment and can divert them away from the justice system
   
-  
+############################################################
+###### Q48: Shorter or longer prison sentences? ############
+############################################################
+
+q48 <- tabs(data, q48) |>
+  mutate(answer = factor(answer, levels = answer[order(pct)]))
+
+q48_labels <- c(
+  "Shorter prison sentences and using money saved to fund youth vio" = "Shorter prison sentences and using money saved to fund youth violence prevention, mental health interventions, and addiction programs",
+  "Longer prison sentences and maintaining the prison budget to kee" = "Longer prison sentences and maintaining the prison budget to keep people incarcerated for the full length of their sentences",
+  "Don’t know" = "Don’t know"
+)
+
+q48_plot <- 
+  ggplot(q48, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = 0.7) +
+  labs(title = "Which do you prefer?",
+       x = "Answer",
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = 0.25, hjust = -0.15, size = 4) +
+  scale_x_discrete(labels = benefit_labels) +
+  scale_fill_manual(
+    values = c(
+      "Shorter prison sentences and using money saved to fund youth vio" = "#6BAED6",
+      "Longer prison sentences and maintaining the prison budget to kee" = "#f47d20",
+      "Don’t know" = "black"
+    ),
+    labels = q48_labels
+  ) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  coord_flip() +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        strip.text = element_text(face = "plain", hjust = 0),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        legend.position = "bottom",
+        legend.direction = "vertical")
+
+q48_plot
+
+
+############################################################
+###### Q49: For people who have completed their sentences and remained crime-free, which do you prefer: ############
+############################################################
+
+q49 <- tabs(data, q49) |>
+  mutate(answer = factor(answer, levels = answer[order(pct)]))
+
+q49_labels <- c(
+  "Policies that allow them to clear their public records to expand" = "Policies that allow them to clear their public records to expand job opportunities and housing stability. Law enforcement would still maintain access",
+  "Policies that allow records to appear on background checks for e" = "Policies that allow records to appear on background checks for employment or housing"
+)
+
+q49_all_plot <- 
+  ggplot(q49, aes(x = 1, y = pct, fill = answer)) +
+  geom_col(width = 0.25) +
+  labs(title = "For people who have completed their sentences and remained crime-free, which do you prefer:",
+       x = NULL,
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            position = position_stack(vjust = 0.5),
+            size = 4) +
+  scale_x_discrete(labels = benefit_labels) +
+  scale_fill_manual(
+    values = c(
+      "Policies that allow them to clear their public records to expand" = "#6BAED6",
+      "Policies that allow records to appear on background checks for e" = "#f47d20"
+    ),
+    labels = q49_labels
+  ) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  coord_flip() +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        legend.position = "bottom",
+        legend.direction = "vertical")
+
+q49_all_plot
+
+#########CALL OUT ROLE ON Q49################
+q49x <- crosstabs(data, q49, role) |>
+  mutate(answer = q49) |>
+  group_by(role) |>
+  mutate(answer = factor(answer, levels = answer[order(-pct)])) |>
+  ungroup()
+
+q49x_plot <- 
+  ggplot(q49x, aes(x = answer, y = reorder(answer, pct), fill = answer)) +
+  geom_col(width = .95) +
+  labs(title = "For people who have completed their sentences and remained crime-free, which do you prefer:",
+       x = "",
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = -0.5, hjust = 0.5, size = 4) +
+  scale_x_discrete(labels = benefit_labels) +
+  scale_fill_manual(
+    values = c(
+      "Policies that allow them to clear their public records to expand" = "#6BAED6",
+      "Policies that allow records to appear on background checks for e" = "#f47d20"
+    ),
+    labels = q49_labels
+  ) +
+  facet_wrap(~role, strip.position = "bottom",
+             labeller = labeller(role = c(
+               "Custodial Officer" = "Custodial Officer (n = 56)",
+               "Investigator/Detective" = "Investigator/Detective (n = 27)",
+               "Patrol or Field Officer/Deputy" = "Patrol or Field Officer/Deputy (n = 99)",
+               "Probation Officer" = "Probation Officer (n = 10)",
+               "Supervisory role" = "Supervisory role (n = 57)",
+               "Other" = "Other (n = 28)"
+               ))) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  #coord_flip() +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+       # strip.text = element_text(face = "plain", hjust = 0),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        strip.placement = "outside",
+        strip.text = element_text(hjust = 0.5),
+        panel.spacing.y = unit(0.5, "lines"),
+        legend.position = "bottom",
+        legend.direction = "vertical")
+
+q49x_plot
+
+
