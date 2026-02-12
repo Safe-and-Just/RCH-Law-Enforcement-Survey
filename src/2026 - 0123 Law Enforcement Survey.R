@@ -74,11 +74,13 @@ data <- data %>%
                             q4 == "Probation or Parole Agency" ~ "Corrections/Supervision"),
          role = case_when(q4 == "Probation or Parole Agency" | grepl("robation", q5_other_key_in) ~ "Probation Officers",
                           q5 == "Investigator/Detective" ~ "Investigators/Detectives",
+                        #  q4 == "Department of Corrections" & grepl("Supervisory", q5) ~ "Custodial Officers", 
+                          q4 == "Department of Corrections" & grepl("Patrol", q5) ~ "Probation Officers", 
                           q5 == "Custodial Officer/Deputy in a jail or detention center" ~ "Custodial Officers", 
                           q5 == "Supervisory role (e.g., Sergeant, Lieutenant, Captain, Major, As" ~ "Supervisors",
                           q5_other_key_in %in% c("Correction officer", "Correctional officer", "Corrections officer", "Inside")  ~ "Custodial Officers", 
                           q5_other_key_in %in% c("Probation and Parole officer", "Probation officer", "Probation officer aide", "Probation Officer") ~ "Probation Officers",
-                          q5 == "Patrol or Field Officer/Deputy" & q4 != "Probation or Parole Agency" ~ "Patrol or Field Officers",
+                          q5 == "Patrol or Field Officer/Deputy" & !q4 %in% c("Probation or Parole Agency", "Department of Corrections") ~ "Patrol or Field Officers",
                           TRUE ~ "Other"),
          race_ethn = case_when(q58_4 != "" ~ q58_4,
                           q58_3 != "" ~ q58_3,
@@ -97,6 +99,10 @@ data <- data %>%
                               q55 == "Yes, I live in the same city." ~ "City or metro area",
                               q55 == "Yes, I live in the same metro area." ~ "City or metro area",
                               TRUE ~ "Outside metro area"))
+
+test <- data |> 
+  select(role, q5, q4, q5_other_key_in)
+View(test)
 
 table(data$role)
 
@@ -267,7 +273,7 @@ export <- function(data, v1) {
 q51 <- export(data, q51)
 q48 <- export(data, q48)
 q47 <- export(data, q47)
-
+export(data, q48)
 ### Functions for agree/disagree stacked charts
 
 agree <- function(data, v1) {
@@ -1217,12 +1223,55 @@ q45_all_plot <-
 
 q45_all_plot
 
+
+
+##### Q45 custodial ##########
+
+custodial <- data |> 
+  filter(grepl("Custodial", role))
+
+q45_custodial <- export(custodial, q45)
+
+q45_custodial <- tabs(custodial, q45) |>
+  mutate(answer = factor(answer, levels = answer[order(pct)]))
+
+q45_custodial_plot <- 
+  ggplot(q45_custodial, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = 0.75) +
+  labs(title = "Do you prefer that governments invest more in",
+       x = NULL,
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = 0.25, hjust = -0.15, size = 4) +
+  scale_y_continuous(limits = c(0,0.75),
+                     labels = scales::percent) +
+  scale_fill_manual(
+    values = c(
+      "Preventing crime by strengthening communities" = "#6BAED6",
+      "Responding to crime by punishing people who commit crimes" = "#f47d20"
+    )) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  coord_flip() +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        legend.position = "bottom",
+        legend.direction = "vertical")
+
+q45_custodial_plot
+
 #### Q45 x role #####
 q45x <- crosstabs(data, q45, role) |>
   mutate(answer = q45) |>
   group_by(role) |>
   mutate(answer = factor(answer, levels = answer[order(-pct)])) |>
-  ungroup()
+  ungroup() |> 
+  
 
 q45x_plot <- 
   ggplot(q45x, aes(x = answer, y = pct, fill = answer)) +
