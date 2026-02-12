@@ -517,9 +517,7 @@ p_q35_40 <- ggplot(
     scales = "free_x",
     drop = FALSE
   ) +
-  
   scale_fill_manual(values = agree_disagree_colors) +
-  
   theme_minimal() +
   theme(
     axis.text.y  = element_blank(),
@@ -698,6 +696,8 @@ p1 <- programs_summary_table |>
   filter(support == "Agree") |>
   ggplot(aes(x = worked, y = percent, fill = worked)) +
   geom_col() +
+  scale_y_continuous(limits = c(0,1),
+                     labels = scales::percent) +
   facet_wrap(~ program) +
   labs(
     x = NULL,
@@ -705,6 +705,8 @@ p1 <- programs_summary_table |>
   ) +
   theme_minimal() +
   theme(strip.text = element_text(face = "bold"))
+
+p1
 
 cvi_plot <- programs_summary_table |>
   filter(program == "violence interruption",
@@ -1451,6 +1453,7 @@ q52_labels <- c(
   "US military national guard soldiers are capable of effectively p" = "US military national guard soldiers are capable of effectively patrolling US cities and reducing crime"
 )
 
+q48 <- export(data, q48)
 q52_all_plot <- 
   ggplot(q52, aes(x = answer, y = pct, fill = answer)) +
   geom_col(width = 0.75) +
