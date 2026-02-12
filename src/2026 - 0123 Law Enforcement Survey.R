@@ -100,12 +100,6 @@ data <- data %>%
                               q55 == "Yes, I live in the same metro area." ~ "City or metro area",
                               TRUE ~ "Outside metro area"))
 
-test <- data |> 
-  select(role, q5, q4, q5_other_key_in)
-View(test)
-
-table(data$role)
-
 race_check <- data |>
   select(q58_1, q58_2, q58_3, q58_4, q58_5, q58_6, q58_7, race_ethn)
 
@@ -494,90 +488,90 @@ agree_totals(q40)
 
 ##################################
 ###### Q35 to Q40 df #############
-##################################
-
-q35 <- agree_totals(q35) |>
-  mutate(q = "online reporting")
-q36 <- agree_totals(q36) |>
-  mutate(q = "welfare checks")
-q37 <- agree_totals(q37) |>
-  mutate(q = "sobering centers")
-q38 <- agree_totals(q38) |>
-  mutate(q = "traffic collisions")
-q39 <- agree_totals(q39) |>
-  mutate(q = "mh de-escalation")
-q40 <- agree_totals(q40) |>
-  mutate(q = "violence interruption")
-
-q35_40 <- rbind(q35, q36, q37, q38, q39, q40)
-
-q35_40p <- q35_40 |>
-  mutate(
-    agree_group = factor(agree_group, levels = c("Agree", "Disagree")),
-    answer = factor(
-      answer,
-      levels = c(
-        "Somewhat agree",
-        "Strongly agree",
-        "Somewhat disagree",
-        "Strongly disagree"
-      )
-    )
-  )
-
-q35_40p_label <- q35_40p |>
-  filter(!is.na(agree_group)) |>
-  mutate(
-    agree_group = factor(agree_group, levels = c("Agree", "Disagree"))
-  ) |>
-  group_by(q, agree_group) |>
-  summarise(pct = sum(pct), .groups = "drop")
-
-
-##################################
-###### Q35 to Q40 plot #############
-##################################
-
-p_q35_40 <- ggplot(
-  q35_40p,
-  aes(
-    x = agree_group,
-    y = pct,
-    fill = answer
-  )
-) +
-  geom_col(width = 0.85) +
-  
-  geom_text(
-    data = q35_40p_label,
-    aes(
-      x = factor(agree_group, levels = c("Agree", "Disagree")),
-      y = pct,
-      label = paste0(pct, "%")
-    ),
-    vjust = -0.5,
-    size = 3.5,
-    inherit.aes = FALSE
-  ) +
-  
-  facet_wrap(
-    ~ str_wrap(q, 40),
-    scales = "free_x",
-    drop = FALSE
-  ) +
-  
-  scale_fill_manual(values = agree_disagree_colors) +
-  
-  theme_minimal() +
-  theme(
-    axis.text.y  = element_blank(),
-    axis.ticks.y = element_blank(),
-    panel.grid   = element_blank()
-  )
-
-
-
-p_q35_40
+# ##################################
+# 
+# q35 <- agree_totals(q35) |>
+#   mutate(q = "online reporting")
+# q36 <- agree_totals(q36) |>
+#   mutate(q = "welfare checks")
+# q37 <- agree_totals(q37) |>
+#   mutate(q = "sobering centers")
+# q38 <- agree_totals(q38) |>
+#   mutate(q = "traffic collisions")
+# q39 <- agree_totals(q39) |>
+#   mutate(q = "mh de-escalation")
+# q40 <- agree_totals(q40) |>
+#   mutate(q = "violence interruption")
+# 
+# q35_40 <- rbind(q35, q36, q37, q38, q39, q40)
+# 
+# q35_40p <- q35_40 |>
+#   mutate(
+#     agree_group = factor(agree_group, levels = c("Agree", "Disagree")),
+#     answer = factor(
+#       answer,
+#       levels = c(
+#         "Somewhat agree",
+#         "Strongly agree",
+#         "Somewhat disagree",
+#         "Strongly disagree"
+#       )
+#     )
+#   )
+# 
+# q35_40p_label <- q35_40p |>
+#   filter(!is.na(agree_group)) |>
+#   mutate(
+#     agree_group = factor(agree_group, levels = c("Agree", "Disagree"))
+#   ) |>
+#   group_by(q, agree_group) |>
+#   summarise(pct = sum(pct), .groups = "drop")
+# 
+# 
+# ##################################
+# ###### Q35 to Q40 plot #############
+# ##################################
+# 
+# p_q35_40 <- ggplot(
+#   q35_40p,
+#   aes(
+#     x = agree_group,
+#     y = pct,
+#     fill = answer
+#   )
+# ) +
+#   geom_col(width = 0.85) +
+#   
+#   geom_text(
+#     data = q35_40p_label,
+#     aes(
+#       x = factor(agree_group, levels = c("Agree", "Disagree")),
+#       y = pct,
+#       label = paste0(pct, "%")
+#     ),
+#     vjust = -0.5,
+#     size = 3.5,
+#     inherit.aes = FALSE
+#   ) +
+#   
+#   facet_wrap(
+#     ~ str_wrap(q, 40),
+#     scales = "free_x",
+#     drop = FALSE
+#   ) +
+#   
+#   scale_fill_manual(values = agree_disagree_colors) +
+#   
+#   theme_minimal() +
+#   theme(
+#     axis.text.y  = element_blank(),
+#     axis.ticks.y = element_blank(),
+#     panel.grid   = element_blank()
+#   )
+# 
+# 
+# 
+# p_q35_40
 
 ##################################
 ###### BEYOND ####################
@@ -714,7 +708,8 @@ asj_colors <- function (...) {
 }
 
 
-ggplot(subset(time_charts, grepl("Custodial", role)), aes(x = experience, y = value, fill = name)) +
+charts_for_timeq <- function (char) {
+ggplot(subset(time_charts, grepl(char, role)), aes(x = experience, y = value, fill = name)) +
   geom_col(position = position_dodge(width = 0.8)) +
   asj_colors() +
   geom_text(
@@ -743,25 +738,19 @@ ggplot(subset(time_charts, grepl("Custodial", role)), aes(x = experience, y = va
       panel.grid.minor = element_blank(),
   )
 
+}
+
+charts_for_timeq("All")
+charts_for_timeq("Patrol")
+charts_for_timeq("Custodial")
+
 
 
 # 52% of patrol officers say they respond to a violent crime in progress a few times a week
 # More patrol officers deal with mh crisis and homelessness on a weekly basis than violent crime in progress.
 
-timeq(q21)
-timeq(q23)
-timeq(q24)
-timeq(q25)
-timeq(q26)
-timeq(q27)
-timeq(q28)
-timeq(q29)
 
 
-
-table(data$q20, useNA = "always")
-
-agree_totals(q40)
 
 ##############################################################################################################
 ######## TABLES AND DATA VIZ FOR PROGRAM SUPPORT BY WORKED IN THOSE PROGRAMS #################################
@@ -1270,8 +1259,9 @@ q45x <- crosstabs(data, q45, role) |>
   mutate(answer = q45) |>
   group_by(role) |>
   mutate(answer = factor(answer, levels = answer[order(-pct)])) |>
-  ungroup() |> 
+  ungroup() 
   
+table(data$role)
 
 q45x_plot <- 
   ggplot(q45x, aes(x = answer, y = pct, fill = answer)) +
@@ -1292,8 +1282,8 @@ q45x_plot <-
              labeller = labeller(role = c(
                "Custodial Officers" = "Custodial Officers (n = 55)",
                "Investigators/Detectives" = "Investigators/Detectives (n = 26)",
-               "Patrol or Field Officers" = "Patrol or Field Officers (n = 99)",
-               "Probation Officers" = "Probation Officers (n = 13)",
+               "Patrol or Field Officers" = "Patrol or Field Officers (n = 90)",
+               "Probation Officers" = "Probation Officers (n = 22)",
                "Supervisors" = "Supervisors (n = 56)",
                "Other" = "Other (n = 28)"
              ))) +
@@ -1660,3 +1650,4 @@ q52_all_plot <-
   )
 
 q52_all_plot
+
