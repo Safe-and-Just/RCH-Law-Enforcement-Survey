@@ -968,16 +968,16 @@ q49_labels <- c(
 )
 
 q49_all_plot <- 
-  ggplot(q49, aes(x = 1, y = pct, fill = answer)) +
-  geom_col(width = 0.25) +
+  ggplot(q49, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = 0.75) +
   labs(title = "For people who have completed their sentences and remained crime-free, which do you prefer:",
        x = NULL,
        y = "Percentage",
        fill = "Response") +
   geom_text(aes(label = paste0(round(pct*100), "%")),
-            position = position_stack(vjust = 0.5),
-            size = 4) +
-  scale_x_discrete(labels = benefit_labels) +
+            vjust = 0.25, hjust = -0.15, size = 4) +
+  scale_y_continuous(limits = c(0,0.75),
+                     labels = scales::percent) +
   scale_fill_manual(
     values = c(
       "Policies that allow them to clear their public records to expand" = "#6BAED6",
@@ -1067,6 +1067,8 @@ q45_all_plot <-
        fill = "Response") +
   geom_text(aes(label = paste0(round(pct*100), "%")),
             vjust = 0.25, hjust = -0.15, size = 4) +
+  scale_y_continuous(limits = c(0,0.75),
+                     labels = scales::percent) +
   scale_fill_manual(
     values = c(
       "Preventing crime by strengthening communities" = "#6BAED6",
@@ -1137,3 +1139,346 @@ q45x_plot <-
 
 q45x_plot
 
+
+##### Q44 all ##########
+
+q44 <- export(data, q44)
+
+q44 <- tabs(data, q44) |>
+  mutate(answer = factor(answer, levels = answer[order(pct)]))
+
+q44_all_plot <- 
+  ggplot(q44, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = 0.75) +
+  labs(title = "What do you think is the most effective way to prevent people from committing repeat crimes?",
+       x = NULL,
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = 0.25, hjust = -0.15, size = 4) +
+  scale_fill_manual(
+    values = c(
+      "Cognitive behavioral therapy and/or addiction treatment" = "#08306B",
+      "Job training and employment opportunities" = "#6BAED6",
+      "Don’t know" = "black",
+      "Long prison sentences" = "#f47d20"
+    )) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  coord_flip() +
+  scale_y_continuous(limits = c(0,0.5),
+                     labels = scales::percent) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        #legend.position = "bottom",
+        #legend.direction = "vertical"
+        )
+
+q44_all_plot
+
+
+#### Q44 x role #####
+q44x <- crosstabs(data, q44, role) |>
+  mutate(answer = q44) |>
+  mutate(
+    role = factor(role)
+  ) |>
+  group_by(answer) |>
+  mutate(total_pct = sum(pct)) |>
+  ungroup() |>
+  mutate(
+    answer = factor(answer,
+                    levels = unique(answer[order(-total_pct)]))
+  ) |>
+  complete(role, answer, fill = list(pct = 0.001))
+
+q44x_plot <- 
+  ggplot(q44x, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = .85) +
+  labs(title = "What do you think is the most effective way to prevent people from committing repeat crimes?",
+       x = "",
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = -0.5, hjust = 0.5, size = 4) +
+  scale_fill_manual(
+    values = c(
+      "Cognitive behavioral therapy and/or addiction treatment" = "#08306B",
+      "Job training and employment opportunities" = "#6BAED6",
+      "Don’t know" = "black",
+      "Long prison sentences" = "#f47d20")) +
+  scale_color_discrete(drop = FALSE) +
+  facet_wrap(~role, strip.position = "bottom",
+             labeller = labeller(role = c(
+               "Custodial Officers" = "Custodial Officers (n = 55)",
+               "Investigators/Detectives" = "Investigators/Detectives (n = 26)",
+               "Patrol or Field Officers" = "Patrol or Field Officers (n = 99)",
+               "Probation Officers" = "Probation Officers (n = 13)",
+               "Supervisors" = "Supervisors (n = 56)",
+               "Other" = "Other (n = 28)"
+             ))) +
+  #guides(fill = guide_legend(reverse = TRUE)) +
+  #coord_flip() +
+  scale_y_continuous(limits = c(0,1),
+                     labels = scales::percent) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        #strip.text = element_text(face = "plain", hjust = 0),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        strip.placement = "outside",
+        strip.text = element_text(hjust = 0.5),
+        panel.spacing.y = unit(0.5, "lines"),
+        #legend.position = "bottom",
+        legend.direction = "vertical")
+
+q44x_plot
+
+
+### Q46 all ####
+q46 <- export(data, q46)
+
+q46 <- tabs(data, q46) |>
+  mutate(answer = factor(answer, levels = answer[order(pct)]))
+
+q46_labels <- c(
+  "Options beyond just prison, such as rehabilitation, cognitive be" = "Options beyond just prison, such as rehabilitation, cognitive behavioral therapy, mental health interventions, drug programs, restorative justice, or community service",
+  "Put them in prison" = "Put them in prison"
+)
+
+q46_all_plot <- 
+  ggplot(q46, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = 0.75) +
+  labs(title = "When people commit crimes, which do you think is generally the best way to hold them accountable?",
+       x = NULL,
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = 0.25, hjust = -0.15, size = 4) +
+  scale_fill_manual(
+    values = c(
+      "Options beyond just prison, such as rehabilitation, cognitive be" = "#6BAED6",
+      "Put them in prison" = "#f47d20"
+    ),
+    labels = q46_labels) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  coord_flip() +
+  scale_y_continuous(limits = c(0,0.85),
+                     labels = scales::percent) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        legend.position = "bottom",
+        legend.direction = "vertical"
+  )
+
+q46_all_plot
+
+
+#### Q46 x role #####
+q46x <- crosstabs(data, q46, role) |>
+  mutate(answer = q46) |>
+  mutate(
+    role = factor(role)
+  ) |>
+  group_by(answer) |>
+  mutate(total_pct = sum(pct)) |>
+  ungroup() |>
+  mutate(
+    answer = factor(answer,
+                    levels = unique(answer[order(-total_pct)]))
+  # ) |>
+  # complete(role, answer, fill = list(pct = 0.001)
+  )
+
+q46x_plot <- 
+  ggplot(q46x, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = .85) +
+  labs(title = "When people commit crimes, which do you think is generally the best way to hold them accountable?",
+       x = "",
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = -0.5, hjust = 0.5, size = 4) +
+  scale_fill_manual(
+    values = c(
+      "Options beyond just prison, such as rehabilitation, cognitive be" = "#6BAED6",
+      "Put them in prison" = "#f47d20"
+    ),
+    labels = q46_labels) +
+  facet_wrap(~role, strip.position = "bottom",
+             labeller = labeller(role = c(
+               "Custodial Officers" = "Custodial Officers (n = 55)",
+               "Investigators/Detectives" = "Investigators/Detectives (n = 26)",
+               "Patrol or Field Officers" = "Patrol or Field Officers (n = 99)",
+               "Probation Officers" = "Probation Officers (n = 13)",
+               "Supervisors" = "Supervisors (n = 56)",
+               "Other" = "Other (n = 28)"
+             ))) +
+  #guides(fill = guide_legend(reverse = TRUE)) +
+  #coord_flip() +
+  scale_y_continuous(limits = c(0,1),
+                     labels = scales::percent) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        #strip.text = element_text(face = "plain", hjust = 0),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        strip.placement = "outside",
+        strip.text = element_text(hjust = 0.5),
+        panel.spacing.y = unit(0.5, "lines"),
+        legend.position = "bottom",
+        legend.direction = "vertical")
+
+q46x_plot
+
+### Q50 all ####
+q50 <- export(data, q50)
+
+q50 <- tabs(data, q50) |>
+  mutate(answer = factor(answer, levels = answer[order(pct)]))
+
+q50_labels <- c(
+  "Rehabilitation-focused policies – authorize the parole board o" = "Rehabilitation-focused policies – authorize the parole board or similar agency to consider early release for people who participated in rehabilitation, education, and job training",
+  "Fixed-term policies – uniform policies that require everyone t" = "Fixed-term policies – uniform policies that require everyone to serve mandatory terms"
+)
+
+q50_all_plot <- 
+  ggplot(q50, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = 0.75) +
+  labs(title = "For people in prison who are going to be released, do you prefer:",
+       x = NULL,
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = 0.25, hjust = -0.15, size = 4) +
+  scale_fill_manual(
+    values = c(
+      "Rehabilitation-focused policies – authorize the parole board o" = "#6BAED6",
+      "Fixed-term policies – uniform policies that require everyone t" = "#f47d20"
+    ),
+    labels = q50_labels) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  coord_flip() +
+  scale_y_continuous(limits = c(0,1),
+                     labels = scales::percent) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        legend.position = "bottom",
+        legend.direction = "vertical"
+  )
+
+q50_all_plot
+
+
+### Q51 all ####
+q51 <- export(data, q51)
+
+q51 <- tabs(data, q51) |>
+  mutate(answer = factor(answer, levels = answer[order(pct)]))
+
+unique(data$q51)
+
+q51_labels <- c(
+  "Deploy National Guard soldiers" = "Deploy National Guard soldiers",
+  "Expand police patrols" = "Expand police patrols",
+  "Expand policing in hot spots and neighborhood violence preventio" = "Expand policing in hot spots and neighborhood violence prevention programs"
+)
+
+q51_all_plot <- 
+  ggplot(q51, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = 0.75) +
+  labs(title = "If your city experienced a spike in violence, which would be most effective way to address it:",
+       x = NULL,
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = 0.25, hjust = -0.15, size = 4) +
+  scale_fill_manual(
+    values = c(
+      "Expand policing in hot spots and neighborhood violence preventio" = "#08306B",
+      "Expand police patrols" = "#6BAED6",
+      "Deploy National Guard soldiers" = "#f47d20"
+    ),
+    labels = q51_labels) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  coord_flip() +
+  scale_y_continuous(limits = c(0,1),
+                     labels = scales::percent) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        legend.position = "bottom",
+        legend.direction = "vertical"
+  )
+
+q51_all_plot
+
+
+### Q52 all ####
+q52 <- export(data, q52)
+
+q52 <- tabs(data, q52) |>
+  mutate(answer = factor(answer, levels = answer[order(pct)]))
+
+unique(data$q52)
+
+q52_labels <- c(
+  "US military national guard soldiers are trained to protect our c" = "US military national guard soldiers are trained to protect our country from foreign adversaries, which is different from the responsibilities of local law enforcement",
+  "US military national guard soldiers are capable of effectively p" = "US military national guard soldiers are capable of effectively patrolling US cities and reducing crime"
+)
+
+q52_all_plot <- 
+  ggplot(q52, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = 0.75) +
+  labs(title = "Which of the following statements do you agree with the most:",
+       x = NULL,
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = 0.25, hjust = -0.15, size = 4) +
+  scale_fill_manual(
+    values = c(
+      "US military national guard soldiers are capable of effectively p" = "#6BAED6",
+      "US military national guard soldiers are trained to protect our c" = "#f47d20"
+    ),
+    labels = q52_labels) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  coord_flip() +
+  scale_y_continuous(limits = c(0,1),
+                     labels = scales::percent) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        legend.position = "bottom",
+        legend.direction = "vertical"
+  )
+
+q52_all_plot
