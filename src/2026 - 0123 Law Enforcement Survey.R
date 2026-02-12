@@ -36,7 +36,11 @@ colnames(questions) <- c("variable", "question")
 
 questions <- questions %>%
   mutate(
-    question = sub("^.* \\| ", "", question)
+    question = sub("^.* \\| ", "", question),
+    question = case_when(variable == "q32" ~ "Individuals experiencing mental health crises often need interventions or services beyond what my department is equipped to provide.",
+                         variable == "q33" ~ "Individuals experiencing drug overdoses often need interventions or treatment beyond what my department is equipped to provide.",
+                         variable == "q34" ~ "Individuals experiencing homelessness often need interventions or services other than what my department is equipped to provide.",
+                         TRUE ~ question)
   )
 
 question_lookup <- setNames(
@@ -207,6 +211,14 @@ agree_disagree_colors <- c(
   "Strongly disagree"   = "#D94801"   # dark orange
 )
 
+asj_colors <- function(...) {
+  scale_color_manual(
+    values =  "#08306B", "#FDBE85", "#6BAED6", "#D94801",
+    drop = FALSE,
+    ...
+  )
+}
+
 export <- function(data, v1) {
   
   q <- auto(data, {{v1}}) 
@@ -349,7 +361,7 @@ agree_totals <- function(v1) {
         answer %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
         TRUE ~ NA_character_
       ),
-      agree_group = factor(agree_group, levels = c("Agree", "Disagree")),
+      agree_group = factor(agree_group, levels = c("Disagree", "Agree")),
       answer = factor(
         answer,
         levels = c(
@@ -388,32 +400,42 @@ agree_totals <- function(v1) {
         y = pct,
         label = paste0(pct, "%")
       ),
-      vjust = -0.5,
+      hjust = -0.15,   # <-- was vjust
       size = 3.5,
       inherit.aes = FALSE
     ) +
     
+    coord_flip() +   # <-- flip here
+    
     labs(
-      title = str_wrap(title$question),
+      title = str_wrap(title$question, width = 60),
       x = NULL,
       y = NULL,
       fill = "Response"
     ) +
+    
+    scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +  # space for labels
+    
+    scale_x_discrete(
+      labels = function(x) str_wrap(x, width = 20)   # <-- wrap category labels
+    ) +
+    
     theme_minimal() +
     theme(
-      # remove y-axis
-      axis.text.y  = element_blank(),
-      axis.ticks.y = element_blank(),
+      # remove value axis (now x after flip)
+      axis.text.x  = element_blank(),
+      axis.ticks.x = element_blank(),
+      
+      # keep category labels readable
+      axis.text.y = element_text(hjust = 1),
       
       # remove gridlines
       panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
       
-      # keep x labels readable
-      axis.text.x = element_text(angle = 0, hjust = 1),
-      
       legend.position = "none"
     )
+  
   
   agree_levels_present <- intersect(
     names(agree_disagree_colors),
@@ -435,8 +457,8 @@ agree_totals <- function(v1) {
   # write.csv(q, file = file.path("output", paste0(var2, ".csv")), row.names = F)
   
   print(plot_stacked)
-  
   print(q)
+  return(q)
   
 }
 
@@ -570,11 +592,15 @@ write.csv(beyond, "output/beyond.csv", row.names = F)
 ####################################################
 timeq <- function(v1) {
   
+  experience <- questions[questions$variable == as.character(substitute(v1)), 2]
+  
+  
   df <- data %>%
     mutate(frequency = case_when({{v1}} == "Never" ~ "never",
                                  {{v1}} == "Often (several times a week)" ~ "weekly",
                                  {{v1}} == "Occasionally (several times a year)" ~ "yearly",
-                                 {{v1}} == "Rarely (once every few years)" ~ "rarely"
+                                 {{v1}} == "Rarely (once every few years)" ~ "rarely",
+                                 TRUE ~ NA
     )
     ) |> 
     group_by(
@@ -583,7 +609,7 @@ timeq <- function(v1) {
     summarise(n_cases = n()) |> 
     pivot_wider(names_from = "frequency",
                 values_from = "n_cases") |> 
-    mutate(total = never + weekly + yearly + rarely,
+    mutate(total = rowSums(across(c(never, weekly, yearly, rarely)), na.rm = T),
            Ever = total - never,
            `At least a few times a year` = weekly + yearly,
            `A few times a week` = weekly) |> 
@@ -592,18 +618,18 @@ timeq <- function(v1) {
     pivot_longer(!role)
   
   total <- data |> 
-    mutate(frequency = case_when({{v1}} == "Never" ~ "never",
-                                 {{v1}} == "Often (several times a week)" ~ "weekly",
-                                 {{v1}} == "Occasionally (several times a year)" ~ "yearly",
-                                 {{v1}} == "Rarely (once every few years)" ~ "rarely"
-    )
+    mutate(frequency = case_when(grepl("Never", {{v1}}) ~ "never",
+                                 grepl("Often", {{v1}}) ~ "weekly",
+                                 grepl("Occasionally", {{v1}}) ~ "yearly",
+                                 grepl("Rarely", {{v1}}) ~ "rarely",
+                                 TRUE ~ NA)
     ) |> 
     group_by(
       frequency) %>%
     summarise(n_cases = n()) |> 
     pivot_wider(names_from = "frequency",
                 values_from = "n_cases") |> 
-    mutate(total = never + weekly + yearly + rarely,
+    mutate(total = rowSums(across(c(never, weekly, yearly, rarely)), na.rm = T),
            Ever = total - never,
            `At least a few times a year` = weekly + yearly,
            `A few times a week` = weekly) |> 
@@ -613,20 +639,103 @@ timeq <- function(v1) {
     pivot_longer(!role)
   
   df <- bind_rows(total, df) |> 
-    filter(role %in% c("All", "Custodial Officers", "Patrol or Field Officers", "Supervisors"))
+    filter(role %in% c("All", "Custodial Officers", "Patrol or Field Officers", "Supervisors")) |> 
+    mutate(value = case_when(is.na(value) & name == "Ever" ~ 100,
+                             TRUE ~ value),
+           experience = gsub("people experiencing |responding to a", "", tolower(experience)))
   
-  print(questions[questions$variable == as.character(substitute(v1)), ])
 
   return(df)
   
 }
-questions[questions$variable == "q17", ]
+questions[questions$variable == "q17", 2]
 
+timeq(q19)
 timeq(q17)
 timeq(q18)
-timeq(q19)
 timeq(q20)
+timeq(q22)
+
+time_charts <- bind_rows(timeq(q19),
+                         timeq(q17),
+                         timeq(q18),
+                         timeq(q22),
+                         timeq(q20) )
+
+
+time_charts <- time_charts |> 
+  group_by(experience) |> 
+  mutate(max = case_when(role == "All"  & name == "Ever" ~ value,
+                         TRUE ~ NA)) |>
+  fill(max, .direction = "downup")
+  
+experience_levels <- time_charts |>
+  filter(role == "All", name == "Ever") |>
+  arrange(max) |>
+  pull(experience)
+
+time_charts <- time_charts |> 
+  arrange(max, experience) |> 
+  arrange(max, role, experience, value) |> 
+  mutate(name = factor(name),
+         experience = factor(experience, levels = experience_levels),
+         role = factor(role))
+
+
+
+asj_colors <- function (...) {
+  scale_fill_manual(
+    values =  c("#193f72", "#38c3e1", "#f37659", "#009d8f", "#c5a5a5", "#fef3ee", "#ced4dc"),
+  )
+}
+
+
+ggplot(subset(time_charts, grepl("Custodial", role)), aes(x = experience, y = value, fill = name)) +
+  geom_col(position = position_dodge(width = 0.8)) +
+  asj_colors() +
+  geom_text(
+    aes(label = paste0(value, "%")),
+    position = position_dodge(width = 1),
+    vjust = -0.3,
+    size = 3
+  ) +
+  labs(
+    x = NULL,
+    y = "Percent of officers",
+    fill = NULL
+  ) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +  # <-- wrap labels
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 0, hjust = 0.5),
+      # remove y-axis
+      axis.text.y  = element_blank(),
+      axis.ticks.y = element_blank(),
+      
+      # remove gridlines
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+  )
+
+
+
+# 52% of patrol officers say they respond to a violent crime in progress a few times a week
+# More patrol officers deal with mh crisis and homelessness on a weekly basis than violent crime in progress.
+
 timeq(q21)
+timeq(q23)
+timeq(q24)
+timeq(q25)
+timeq(q26)
+timeq(q27)
+timeq(q28)
+timeq(q29)
+
+
+
+table(data$q20, useNA = "always")
 
 agree_totals(q40)
 
