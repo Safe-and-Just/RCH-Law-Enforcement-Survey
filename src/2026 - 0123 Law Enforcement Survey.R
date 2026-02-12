@@ -40,6 +40,12 @@ questions <- questions %>%
     question = case_when(variable == "q32" ~ "Individuals experiencing mental health crises often need interventions or services beyond what my department is equipped to provide.",
                          variable == "q33" ~ "Individuals experiencing drug overdoses often need interventions or treatment beyond what my department is equipped to provide.",
                          variable == "q34" ~ "Individuals experiencing homelessness often need interventions or services other than what my department is equipped to provide.",
+                         variable == "q35" ~ "Online reporting systems for low-level offenses",
+                         variable == "q36" ~ "Teams of trained mental health clinicians and medics",
+                         variable == "q37" ~ "Sobering centers and crisis stabilization centers",
+                         variable == "q38" ~ "Trained professionals responding to non-injury traffic collisions",
+                         variable == "q39" ~ "Professional mental health workers trained in de-escalation techniques",
+                         variable == "q40" ~ "Community residents trained in street outreach",
                          TRUE ~ question)
   )
 
@@ -454,7 +460,15 @@ agree_totals <- function(v1) {
     scale_x_discrete(
       labels = function(x) sub("^.*\\.", "", x)
     )
-  # write.csv(q, file = file.path("output", paste0(var2, ".csv")), row.names = F)
+  
+  write.csv(
+    q,
+    file = file.path(
+      "output",
+      paste0(var2, " ", title$question, ".csv")
+    ),
+    row.names = FALSE
+  )  
   
   print(plot_stacked)
   print(q)
@@ -466,6 +480,12 @@ agree_totals(q31)
 agree_totals(q32)
 agree_totals(q33)
 agree_totals(q34)
+agree_totals(q35)
+agree_totals(q36)
+agree_totals(q37)
+agree_totals(q38)
+agree_totals(q39)
+agree_totals(q40)
 
 
 ##################################
