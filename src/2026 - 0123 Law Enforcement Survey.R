@@ -488,90 +488,88 @@ agree_totals(q40)
 
 ##################################
 ###### Q35 to Q40 df #############
-# ##################################
-# 
-# q35 <- agree_totals(q35) |>
-#   mutate(q = "online reporting")
-# q36 <- agree_totals(q36) |>
-#   mutate(q = "welfare checks")
-# q37 <- agree_totals(q37) |>
-#   mutate(q = "sobering centers")
-# q38 <- agree_totals(q38) |>
-#   mutate(q = "traffic collisions")
-# q39 <- agree_totals(q39) |>
-#   mutate(q = "mh de-escalation")
-# q40 <- agree_totals(q40) |>
-#   mutate(q = "violence interruption")
-# 
-# q35_40 <- rbind(q35, q36, q37, q38, q39, q40)
-# 
-# q35_40p <- q35_40 |>
-#   mutate(
-#     agree_group = factor(agree_group, levels = c("Agree", "Disagree")),
-#     answer = factor(
-#       answer,
-#       levels = c(
-#         "Somewhat agree",
-#         "Strongly agree",
-#         "Somewhat disagree",
-#         "Strongly disagree"
-#       )
-#     )
-#   )
-# 
-# q35_40p_label <- q35_40p |>
-#   filter(!is.na(agree_group)) |>
-#   mutate(
-#     agree_group = factor(agree_group, levels = c("Agree", "Disagree"))
-#   ) |>
-#   group_by(q, agree_group) |>
-#   summarise(pct = sum(pct), .groups = "drop")
-# 
-# 
-# ##################################
-# ###### Q35 to Q40 plot #############
-# ##################################
-# 
-# p_q35_40 <- ggplot(
-#   q35_40p,
-#   aes(
-#     x = agree_group,
-#     y = pct,
-#     fill = answer
-#   )
-# ) +
-#   geom_col(width = 0.85) +
-#   
-#   geom_text(
-#     data = q35_40p_label,
-#     aes(
-#       x = factor(agree_group, levels = c("Agree", "Disagree")),
-#       y = pct,
-#       label = paste0(pct, "%")
-#     ),
-#     vjust = -0.5,
-#     size = 3.5,
-#     inherit.aes = FALSE
-#   ) +
-#   
-#   facet_wrap(
-#     ~ str_wrap(q, 40),
-#     scales = "free_x",
-#     drop = FALSE
-#   ) +
-#   
-#   scale_fill_manual(values = agree_disagree_colors) +
-#   
-#   theme_minimal() +
-#   theme(
-#     axis.text.y  = element_blank(),
-#     axis.ticks.y = element_blank(),
-#     panel.grid   = element_blank()
-#   )
-# 
-# 
-# 
-# p_q35_40
+##################################
+
+q35 <- agree_totals(q35) |>
+  mutate(q = "online reporting")
+q36 <- agree_totals(q36) |>
+  mutate(q = "welfare checks")
+q37 <- agree_totals(q37) |>
+  mutate(q = "sobering centers")
+q38 <- agree_totals(q38) |>
+  mutate(q = "traffic collisions")
+q39 <- agree_totals(q39) |>
+  mutate(q = "mh de-escalation")
+q40 <- agree_totals(q40) |>
+  mutate(q = "violence interruption")
+
+q35_40 <- rbind(q35, q36, q37, q38, q39, q40)
+
+q35_40p <- q35_40 |>
+  mutate(
+    agree_group = factor(agree_group, levels = c("Agree", "Disagree")),
+    answer = factor(
+      answer,
+      levels = c(
+        "Somewhat agree",
+        "Strongly agree",
+        "Somewhat disagree",
+        "Strongly disagree"
+      )
+    )
+  )
+
+q35_40p_label <- q35_40p |>
+  filter(!is.na(agree_group)) |>
+  mutate(
+    agree_group = factor(agree_group, levels = c("Agree", "Disagree"))
+  ) |>
+  group_by(q, agree_group) |>
+  summarise(pct = sum(pct), .groups = "drop")
+
+
+##################################
+###### Q35 to Q40 plot #############
+##################################
+
+p_q35_40 <- ggplot(
+  q35_40p,
+  aes(
+    x = agree_group,
+    y = pct,
+    fill = answer
+  )
+) +
+  geom_col(width = 0.85) +
+  
+  geom_text(
+    data = q35_40p_label,
+    aes(
+      x = factor(agree_group, levels = c("Agree", "Disagree")),
+      y = pct,
+      label = paste0(pct, "%")
+    ),
+    vjust = -0.5,
+    size = 3.5,
+    inherit.aes = FALSE
+  ) +
+  
+  facet_wrap(
+    ~ str_wrap(q, 40),
+    scales = "free_x",
+    drop = FALSE
+  ) +
+  scale_fill_manual(values = agree_disagree_colors) +
+  theme_minimal() +
+  theme(
+    axis.text.y  = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid   = element_blank()
+  )
+
+
+
+p_q35_40
 
 ##################################
 ###### BEYOND ####################
@@ -822,6 +820,8 @@ p1 <- programs_summary_table |>
   filter(support == "Agree") |>
   ggplot(aes(x = worked, y = percent, fill = worked)) +
   geom_col() +
+  scale_y_continuous(limits = c(0,1),
+                     labels = scales::percent) +
   facet_wrap(~ program) +
   labs(
     x = NULL,
@@ -829,6 +829,8 @@ p1 <- programs_summary_table |>
   ) +
   theme_minimal() +
   theme(strip.text = element_text(face = "bold"))
+
+p1
 
 cvi_plot <- programs_summary_table |>
   filter(program == "violence interruption",
@@ -1619,6 +1621,7 @@ q52_labels <- c(
   "US military national guard soldiers are capable of effectively p" = "US military national guard soldiers are capable of effectively patrolling US cities and reducing crime"
 )
 
+q48 <- export(data, q48)
 q52_all_plot <- 
   ggplot(q52, aes(x = answer, y = pct, fill = answer)) +
   geom_col(width = 0.75) +
