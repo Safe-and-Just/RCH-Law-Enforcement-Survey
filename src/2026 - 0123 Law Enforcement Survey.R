@@ -36,7 +36,17 @@ colnames(questions) <- c("variable", "question")
 
 questions <- questions %>%
   mutate(
-    question = sub("^.* \\| ", "", question)
+    question = sub("^.* \\| ", "", question),
+    question = case_when(variable == "q32" ~ "Individuals experiencing mental health crises often need interventions or services beyond what my department is equipped to provide.",
+                         variable == "q33" ~ "Individuals experiencing drug overdoses often need interventions or treatment beyond what my department is equipped to provide.",
+                         variable == "q34" ~ "Individuals experiencing homelessness often need interventions or services other than what my department is equipped to provide.",
+                         variable == "q35" ~ "Online reporting systems for low-level offenses",
+                         variable == "q36" ~ "Teams of trained mental health clinicians and medics",
+                         variable == "q37" ~ "Sobering centers and crisis stabilization centers",
+                         variable == "q38" ~ "Trained professionals responding to non-injury traffic collisions",
+                         variable == "q39" ~ "Professional mental health workers trained in de-escalation techniques",
+                         variable == "q40" ~ "Community residents trained in street outreach",
+                         TRUE ~ question)
   )
 
 question_lookup <- setNames(
@@ -64,11 +74,13 @@ data <- data %>%
                             q4 == "Probation or Parole Agency" ~ "Corrections/Supervision"),
          role = case_when(q4 == "Probation or Parole Agency" | grepl("robation", q5_other_key_in) ~ "Probation Officers",
                           q5 == "Investigator/Detective" ~ "Investigators/Detectives",
+                        #  q4 == "Department of Corrections" & grepl("Supervisory", q5) ~ "Custodial Officers", 
+                          q4 == "Department of Corrections" & grepl("Patrol", q5) ~ "Probation Officers", 
                           q5 == "Custodial Officer/Deputy in a jail or detention center" ~ "Custodial Officers", 
                           q5 == "Supervisory role (e.g., Sergeant, Lieutenant, Captain, Major, As" ~ "Supervisors",
                           q5_other_key_in %in% c("Correction officer", "Correctional officer", "Corrections officer", "Inside")  ~ "Custodial Officers", 
                           q5_other_key_in %in% c("Probation and Parole officer", "Probation officer", "Probation officer aide", "Probation Officer") ~ "Probation Officers",
-                          q5 == "Patrol or Field Officer/Deputy" & q4 != "Probation or Parole Agency" ~ "Patrol or Field Officers",
+                          q5 == "Patrol or Field Officer/Deputy" & !q4 %in% c("Probation or Parole Agency", "Department of Corrections") ~ "Patrol or Field Officers",
                           TRUE ~ "Other"),
          race_ethn = case_when(q58_4 != "" ~ q58_4,
                           q58_3 != "" ~ q58_3,
@@ -87,8 +99,6 @@ data <- data %>%
                               q55 == "Yes, I live in the same city." ~ "City or metro area",
                               q55 == "Yes, I live in the same metro area." ~ "City or metro area",
                               TRUE ~ "Outside metro area"))
-
-table(data$role)
 
 race_check <- data |>
   select(q58_1, q58_2, q58_3, q58_4, q58_5, q58_6, q58_7, race_ethn)
@@ -205,6 +215,14 @@ agree_disagree_colors <- c(
   "Strongly disagree"   = "#D94801"   # dark orange
 )
 
+asj_colors <- function(...) {
+  scale_color_manual(
+    values =  "#08306B", "#FDBE85", "#6BAED6", "#D94801",
+    drop = FALSE,
+    ...
+  )
+}
+
 export <- function(data, v1) {
   
   q <- auto(data, {{v1}}) 
@@ -249,7 +267,7 @@ export <- function(data, v1) {
 q51 <- export(data, q51)
 q48 <- export(data, q48)
 q47 <- export(data, q47)
-
+export(data, q48)
 ### Functions for agree/disagree stacked charts
 
 agree <- function(data, v1) {
@@ -347,7 +365,7 @@ agree_totals <- function(v1) {
         answer %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
         TRUE ~ NA_character_
       ),
-      agree_group = factor(agree_group, levels = c("Agree", "Disagree")),
+      agree_group = factor(agree_group, levels = c("Disagree", "Agree")),
       answer = factor(
         answer,
         levels = c(
@@ -386,32 +404,42 @@ agree_totals <- function(v1) {
         y = pct,
         label = paste0(pct, "%")
       ),
-      vjust = -0.5,
+      hjust = -0.15,   # <-- was vjust
       size = 3.5,
       inherit.aes = FALSE
     ) +
     
+    coord_flip() +   # <-- flip here
+    
     labs(
-      title = str_wrap(title$question),
+      title = str_wrap(title$question, width = 60),
       x = NULL,
       y = NULL,
       fill = "Response"
     ) +
+    
+    scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +  # space for labels
+    
+    scale_x_discrete(
+      labels = function(x) str_wrap(x, width = 20)   # <-- wrap category labels
+    ) +
+    
     theme_minimal() +
     theme(
-      # remove y-axis
-      axis.text.y  = element_blank(),
-      axis.ticks.y = element_blank(),
+      # remove value axis (now x after flip)
+      axis.text.x  = element_blank(),
+      axis.ticks.x = element_blank(),
+      
+      # keep category labels readable
+      axis.text.y = element_text(hjust = 1),
       
       # remove gridlines
       panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
       
-      # keep x labels readable
-      axis.text.x = element_text(angle = 0, hjust = 1),
-      
       legend.position = "none"
     )
+  
   
   agree_levels_present <- intersect(
     names(agree_disagree_colors),
@@ -430,11 +458,19 @@ agree_totals <- function(v1) {
     scale_x_discrete(
       labels = function(x) sub("^.*\\.", "", x)
     )
-  # write.csv(q, file = file.path("output", paste0(var2, ".csv")), row.names = F)
+  
+  write.csv(
+    q,
+    file = file.path(
+      "output",
+      paste0(var2, " ", title$question, ".csv")
+    ),
+    row.names = FALSE
+  )  
   
   print(plot_stacked)
-  
   print(q)
+  return(q)
   
 }
 
@@ -442,6 +478,12 @@ agree_totals(q31)
 agree_totals(q32)
 agree_totals(q33)
 agree_totals(q34)
+agree_totals(q35)
+agree_totals(q36)
+agree_totals(q37)
+agree_totals(q38)
+agree_totals(q39)
+agree_totals(q40)
 
 
 ##################################
@@ -566,11 +608,15 @@ write.csv(beyond, "output/beyond.csv", row.names = F)
 ####################################################
 timeq <- function(v1) {
   
+  experience <- questions[questions$variable == as.character(substitute(v1)), 2]
+  
+  
   df <- data %>%
     mutate(frequency = case_when({{v1}} == "Never" ~ "never",
                                  {{v1}} == "Often (several times a week)" ~ "weekly",
                                  {{v1}} == "Occasionally (several times a year)" ~ "yearly",
-                                 {{v1}} == "Rarely (once every few years)" ~ "rarely"
+                                 {{v1}} == "Rarely (once every few years)" ~ "rarely",
+                                 TRUE ~ NA
     )
     ) |> 
     group_by(
@@ -579,7 +625,7 @@ timeq <- function(v1) {
     summarise(n_cases = n()) |> 
     pivot_wider(names_from = "frequency",
                 values_from = "n_cases") |> 
-    mutate(total = never + weekly + yearly + rarely,
+    mutate(total = rowSums(across(c(never, weekly, yearly, rarely)), na.rm = T),
            Ever = total - never,
            `At least a few times a year` = weekly + yearly,
            `A few times a week` = weekly) |> 
@@ -588,18 +634,18 @@ timeq <- function(v1) {
     pivot_longer(!role)
   
   total <- data |> 
-    mutate(frequency = case_when({{v1}} == "Never" ~ "never",
-                                 {{v1}} == "Often (several times a week)" ~ "weekly",
-                                 {{v1}} == "Occasionally (several times a year)" ~ "yearly",
-                                 {{v1}} == "Rarely (once every few years)" ~ "rarely"
-    )
+    mutate(frequency = case_when(grepl("Never", {{v1}}) ~ "never",
+                                 grepl("Often", {{v1}}) ~ "weekly",
+                                 grepl("Occasionally", {{v1}}) ~ "yearly",
+                                 grepl("Rarely", {{v1}}) ~ "rarely",
+                                 TRUE ~ NA)
     ) |> 
     group_by(
       frequency) %>%
     summarise(n_cases = n()) |> 
     pivot_wider(names_from = "frequency",
                 values_from = "n_cases") |> 
-    mutate(total = never + weekly + yearly + rarely,
+    mutate(total = rowSums(across(c(never, weekly, yearly, rarely)), na.rm = T),
            Ever = total - never,
            `At least a few times a year` = weekly + yearly,
            `A few times a week` = weekly) |> 
@@ -609,22 +655,100 @@ timeq <- function(v1) {
     pivot_longer(!role)
   
   df <- bind_rows(total, df) |> 
-    filter(role %in% c("All", "Custodial Officers", "Patrol or Field Officers", "Supervisors"))
+    filter(role %in% c("All", "Custodial Officers", "Patrol or Field Officers", "Supervisors")) |> 
+    mutate(value = case_when(is.na(value) & name == "Ever" ~ 100,
+                             TRUE ~ value),
+           experience = gsub("people experiencing |responding to a", "", tolower(experience)))
   
-  print(questions[questions$variable == as.character(substitute(v1)), ])
 
   return(df)
   
 }
-questions[questions$variable == "q17", ]
+questions[questions$variable == "q17", 2]
 
+timeq(q19)
 timeq(q17)
 timeq(q18)
-timeq(q19)
 timeq(q20)
-timeq(q21)
+timeq(q22)
 
-agree_totals(q40)
+time_charts <- bind_rows(timeq(q19),
+                         timeq(q17),
+                         timeq(q18),
+                         timeq(q22),
+                         timeq(q20) )
+
+
+time_charts <- time_charts |> 
+  group_by(experience) |> 
+  mutate(max = case_when(role == "All"  & name == "Ever" ~ value,
+                         TRUE ~ NA)) |>
+  fill(max, .direction = "downup")
+  
+experience_levels <- time_charts |>
+  filter(role == "All", name == "Ever") |>
+  arrange(max) |>
+  pull(experience)
+
+time_charts <- time_charts |> 
+  arrange(max, experience) |> 
+  arrange(max, role, experience, value) |> 
+  mutate(name = factor(name),
+         experience = factor(experience, levels = experience_levels),
+         role = factor(role))
+
+
+
+asj_colors <- function (...) {
+  scale_fill_manual(
+    values =  c("#193f72", "#38c3e1", "#f37659", "#009d8f", "#c5a5a5", "#fef3ee", "#ced4dc"),
+  )
+}
+
+
+charts_for_timeq <- function (char) {
+ggplot(subset(time_charts, grepl(char, role)), aes(x = experience, y = value, fill = name)) +
+  geom_col(position = position_dodge(width = 0.8)) +
+  asj_colors() +
+  geom_text(
+    aes(label = paste0(value, "%")),
+    position = position_dodge(width = 1),
+    vjust = -0.3,
+    size = 3
+  ) +
+  labs(
+    x = NULL,
+    y = "Percent of officers",
+    fill = NULL
+  ) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +  # <-- wrap labels
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 0, hjust = 0.5),
+      # remove y-axis
+      axis.text.y  = element_blank(),
+      axis.ticks.y = element_blank(),
+      
+      # remove gridlines
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+  )
+
+}
+
+charts_for_timeq("All")
+charts_for_timeq("Patrol")
+charts_for_timeq("Custodial")
+
+
+
+# 52% of patrol officers say they respond to a violent crime in progress a few times a week
+# More patrol officers deal with mh crisis and homelessness on a weekly basis than violent crime in progress.
+
+
+
 
 ##############################################################################################################
 ######## TABLES AND DATA VIZ FOR PROGRAM SUPPORT BY WORKED IN THOSE PROGRAMS #################################
@@ -1090,12 +1214,56 @@ q45_all_plot <-
 
 q45_all_plot
 
+
+
+##### Q45 custodial ##########
+
+custodial <- data |> 
+  filter(grepl("Custodial", role))
+
+q45_custodial <- export(custodial, q45)
+
+q45_custodial <- tabs(custodial, q45) |>
+  mutate(answer = factor(answer, levels = answer[order(pct)]))
+
+q45_custodial_plot <- 
+  ggplot(q45_custodial, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = 0.75) +
+  labs(title = "Do you prefer that governments invest more in",
+       x = NULL,
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = 0.25, hjust = -0.15, size = 4) +
+  scale_y_continuous(limits = c(0,0.75),
+                     labels = scales::percent) +
+  scale_fill_manual(
+    values = c(
+      "Preventing crime by strengthening communities" = "#6BAED6",
+      "Responding to crime by punishing people who commit crimes" = "#f47d20"
+    )) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  coord_flip() +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        legend.position = "bottom",
+        legend.direction = "vertical")
+
+q45_custodial_plot
+
 #### Q45 x role #####
 q45x <- crosstabs(data, q45, role) |>
   mutate(answer = q45) |>
   group_by(role) |>
   mutate(answer = factor(answer, levels = answer[order(-pct)])) |>
-  ungroup()
+  ungroup() 
+  
+table(data$role)
 
 q45x_plot <- 
   ggplot(q45x, aes(x = answer, y = pct, fill = answer)) +
@@ -1116,8 +1284,8 @@ q45x_plot <-
              labeller = labeller(role = c(
                "Custodial Officers" = "Custodial Officers (n = 55)",
                "Investigators/Detectives" = "Investigators/Detectives (n = 26)",
-               "Patrol or Field Officers" = "Patrol or Field Officers (n = 99)",
-               "Probation Officers" = "Probation Officers (n = 13)",
+               "Patrol or Field Officers" = "Patrol or Field Officers (n = 90)",
+               "Probation Officers" = "Probation Officers (n = 22)",
                "Supervisors" = "Supervisors (n = 56)",
                "Other" = "Other (n = 28)"
              ))) +
@@ -1485,3 +1653,4 @@ q52_all_plot <-
   )
 
 q52_all_plot
+
