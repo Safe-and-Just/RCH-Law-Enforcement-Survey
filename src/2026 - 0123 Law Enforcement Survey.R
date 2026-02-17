@@ -1,6 +1,3 @@
-#### CODE FOR VALUE LABELS FROM CENTIMENT
-
-#### SAMPLE SIZES TOO SMALL FOR AGENCY
 
 rm(list = ls())
 
@@ -11,11 +8,12 @@ library(tidylog)
 library(janitor)
 library(stringi)
 library(data.table)
-library(ggplot2)
 library(scales)
 library(purrr)
 library(rlang)
 library(forcats)
+library(svglite)
+
 
 # setwd("~/Documents/GitHub/RCH-Law-Enforcement-Survey")
 
@@ -100,15 +98,10 @@ data <- data %>%
                               q55 == "Yes, I live in the same metro area." ~ "City or metro area",
                               TRUE ~ "Outside metro area"))
 
-race_check <- data |>
-  select(q58_1, q58_2, q58_3, q58_4, q58_5, q58_6, q58_7, race_ethn)
 
-table(data$race_ethn)
-###ADDITIONAL XTABS - role, urbanicity, live where you work, income
-
-# Define main sample
-
-#### function
+table(data$role)
+####### tabs functions ######
+####### v1 = question
 
 tabs <- function(data, v1) {
   total <- nrow(data) 
@@ -124,7 +117,8 @@ tabs <- function(data, v1) {
   
 }
 
-#le_type <- tabs(data, q4)
+####### crosstabs function####### 
+####### v1 = question, v2 = demographic
 
 crosstabs <- function (data, v1, v2) {
   
@@ -142,8 +136,8 @@ crosstabs <- function (data, v1, v2) {
   
 }
 
-#test <- crosstabs(data, q46, q57)
-
+####### auto function  ####### 
+####### v1 = question
 auto <- function (data, v1) {
 
   age <- crosstabs(data, {{v1}}, age) %>%
@@ -196,10 +190,7 @@ auto <- function (data, v1) {
 
 }
 
-q52 <- auto(data, q52)
-q51 <- auto(data, q51)
-q50 <- auto(data, q50)
-
+####### cleaning agree response questions for tables and plots and assigning colors ####### 
 
 agree_stack_levels <- c(
   "Strongly agree",
@@ -212,7 +203,7 @@ agree_disagree_colors <- c(
   "Strongly agree"      = "#08306B",  # dark blue
   "Somewhat agree"      = "#6BAED6",  # light blue
   "Somewhat disagree"   = "#FDBE85",  # light orange
-  "Strongly disagree"   = "#D94801"   # dark orange
+  "Strongly disagree"   = "#D94801"   # dark orange alternatively "#f47d20"
 )
 
 asj_colors <- function(...) {
@@ -223,6 +214,8 @@ asj_colors <- function(...) {
   )
 }
 
+
+####### export function exports table and plot ####### 
 export <- function(data, v1) {
   
   q <- auto(data, {{v1}}) 
@@ -263,12 +256,7 @@ export <- function(data, v1) {
   
 }
 
-##Qs where proximity matters
-q51 <- export(data, q51)
-q48 <- export(data, q48)
-q47 <- export(data, q47)
-export(data, q48)
-### Functions for agree/disagree stacked charts
+####### Functions for agree/disagree stacked charts ####### 
 
 agree <- function(data, v1) {
   
@@ -486,9 +474,7 @@ agree_totals(q39)
 agree_totals(q40)
 
 
-##################################
 ###### Q35 to Q40 df #############
-##################################
 
 q35 <- agree_totals(q35) |>
   mutate(q = "online reporting")
@@ -528,9 +514,7 @@ q35_40p_label <- q35_40p |>
   summarise(pct = sum(pct), .groups = "drop")
 
 
-##################################
 ###### Q35 to Q40 plot #############
-##################################
 
 p_q35_40 <- ggplot(
   q35_40p,
@@ -571,9 +555,9 @@ p_q35_40 <- ggplot(
 
 p_q35_40
 
-##################################
+
 ###### BEYOND ####################
-##################################
+
 
 beyond <- rbind(tabs(data, q32) |> 
                   mutate(issue = "mental health crises"),
@@ -603,9 +587,9 @@ ggplot(beyond, aes(x = issue, y = pct)) +
 
 write.csv(beyond, "output/beyond.csv", row.names = F)
 
-#######################################################
+
 ###### How do officers spend their time #############
-####################################################
+
 timeq <- function(v1) {
   
   experience <- questions[questions$variable == as.character(substitute(v1)), 2]
@@ -701,7 +685,7 @@ time_charts <- time_charts |>
 
 asj_colors <- function (...) {
   scale_fill_manual(
-    values =  c("#193f72", "#38c3e1", "#f37659", "#009d8f", "#c5a5a5", "#fef3ee", "#ced4dc"),
+    values =  c("#193f72", "#38c3e1", "#f47d20", "#009d8f", "#c5a5a5", "#fef3ee", "#ced4dc"),
   )
 }
 
@@ -750,9 +734,9 @@ charts_for_timeq("Custodial")
 
 
 
-##############################################################################################################
+
 ######## TABLES AND DATA VIZ FOR PROGRAM SUPPORT BY WORKED IN THOSE PROGRAMS #################################
-##############################################################################################################
+
 support_vars <- c("q35", "q36", "q37", "q38", "q39", "q40")
 worked_vars <- c("q42_6", "q42_1", "q42_2", "q42_3", "q42_4", "q42_5")
 
@@ -767,7 +751,6 @@ programs <- data |>
                 ~ ifelse(. == "" | is.na(.), 0, 1)))
 
 pairs <- data.frame(
-  #program = c("welfare_checks", "sobering_centers", "collisions", "deescalation", "cvi"),
   support = c("q35", "q36", "q37", "q38", "q39", "q40"),
   worked  = c("q42_6", "q42_4",  "q42_3",  "q42_2",  "q42_1",  "q42_5")
 )
@@ -805,87 +788,6 @@ programs_summary_table <- programs_summary_table |>
     program == "q35" ~ "online reporting"
   ))
 
-# program_ci <- programs_summary_table |>
-#   filter(support == "Agree") |>
-#   mutate(
-#     worked = factor(worked, labels = c("Did not work", "Worked")),
-#     se = sqrt(percent * (1 - percent) / n),
-#     ci_low = percent - 1.96 * se,
-#     ci_high = percent + 1.96 * se
-#   )
-
-p1 <- programs_summary_table |>
-  mutate(
-    worked = factor(worked, labels = c("Did not work", "Worked")) ) |>
-  filter(support == "Agree") |>
-  ggplot(aes(x = worked, y = percent, fill = worked)) +
-  geom_col() +
-  scale_y_continuous(limits = c(0,1),
-                     labels = scales::percent) +
-  facet_wrap(~ program) +
-  labs(
-    x = NULL,
-    y = "Percent who agree"
-  ) +
-  theme_minimal() +
-  theme(strip.text = element_text(face = "bold"))
-
-p1
-
-cvi_plot <- programs_summary_table |>
-  filter(program == "violence interruption",
-         support == "Agree") |>
-  mutate(
-    worked  = factor(worked, labels = c("Did not work", "Worked")),
-    support = factor(support, levels = c("Agree", "Disagree"))
-  ) |>
-  ggplot(aes(x = support, y = percent, fill = worked)) +
-  geom_col(position = position_dodge(width = 0.8)) +
-  geom_text(
-    aes(label = paste0(round(percent*100), "%")),
-    position = position_dodge(width = 0.8),
-    vjust = -0.75,
-    size = 3,
-    fontface = "bold") +
-  labs(
-    title = "cvi",
-    x = NULL,
-    y = "Percent of respondents",
-    fill = "Worked in program"
-   )+
-  theme_minimal() +
-  theme(
-    axis.text.y  = element_blank(),
-    axis.ticks.y = element_blank(),
-    strip.text = element_text(face = "plain", hjust = 0),
-    axis.text.x = element_text(hjust = 0.5),
-    plot.title = element_text(face = "bold", hjust = 0.5)
-  )
-
-cvi_plot
-
-#####ODDS RATIOS BETWEEN WORKED GROUPS
-# or_df <- programs_summary_table |>
-#   filter(support %in% c("Agree", "Disagree")) |>
-#   group_by(program, worked, support) |>
-#   summarise(n = sum(n), .groups = "drop") |>
-#   pivot_wider(
-#     names_from = c(worked, support),
-#     values_from = n,
-#     names_sep = "_"
-#   )
-
-# or_df <- or_df |>
-#   mutate(
-#     or = (`1_Agree` / `1_Disagree`) / (`0_Agree` / `0_Disagree`)
-#   )
-# 
-# or_df <- or_df |>
-#   mutate(
-#     or_label = round(or, 2),
-#     direction = ifelse(or > 1, "Above 1", "Below 1")
-#   )
-
 ####### relative rate q35 to q40 by q41 worked #########
 
 rr_df <- programs_summary_table |>
@@ -918,46 +820,33 @@ rrp1 <- ggplot(rr_df, aes(x = percent_more_likely, y = reorder(program, percent_
     title = "Effect of working on agreement by program"
   ) +
   theme_minimal() +
-  xlim(min(rr_df$percent_more_likely) * 1.2, max(rr_df$percent_more_likely) * 1.2)
+  xlim(min(rr_df$percent_more_likely) * 1.2, max(rr_df$percent_more_likely) * 1.2) 
+
+ggsave(
+  filename = file.path("output/q35_q40_relative_rates.svg"),
+  plot = rrp1,
+  width = 12,
+  height = 6,
+  units = "in"
+)
 
 rrp1
 
-rrp2 <- ggplot(rr_df, aes(x = rr, y = reorder(program, rr))) +
-  geom_point(size = 4, color = "#003972") +
-  geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
-  geom_text(aes(label = round(rr, 2)), hjust = -0.4, size = 4) +
-  labs(
-    x = "Risk Ratio (RR)",
-    y = NULL,
-    title = "Risk ratios for agreement by program"
-  ) +
-  theme_minimal()
 
-rrp2
-
-# p6 <- ggplot(or_df, aes(x = reorder(program, or), y = or)) +
-#   geom_segment(aes(xend = program, y = 1, yend = or), color = "gray80") +
-#   geom_point(aes(color = direction), size = 5) +
-#   geom_text(aes(label = paste0((or_label), "x"), hjust = ifelse(or > 1, -0.5, 1.5)), size = 3.5) +
-#   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-#   scale_y_log10() +
-#   coord_flip() +  
-#   scale_color_manual(values = c("Above 1" = "#003972", "Below 1" = "#f47d20")) +
+# rrp2 <- ggplot(rr_df, aes(x = rr, y = reorder(program, rr))) +
+#   geom_point(size = 4, color = "#003972") +
+#   geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
+#   geom_text(aes(label = round(rr, 2)), hjust = -0.4, size = 4) +
 #   labs(
-#     x = NULL,
-#     title = "Odds Ratios by Program",
-#     color = "Direction"
+#     x = "Risk Ratio (RR)",
+#     y = NULL,
+#     title = "Risk ratios for agreement by program"
 #   ) +
-#   theme_minimal() +
-#   theme(
-#     axis.text.x = element_text(face = "bold"),
-#     plot.title = element_text(face = "bold", hjust = 0.5)
-#   )
+#   theme_minimal()
 # 
-# p6
-#####################################################
+# rrp2
+
 ####### BENEFITS OF MENTAL HEALTH RESPONSE ##########
-#####################################################
 
 programs_temp <- programs |>
   mutate(across(q41_1:q41_6, ~ ifelse(is.na(.) | . == "", 0, 1)),
@@ -970,7 +859,6 @@ mh_summary_table <- programs_temp |>
     names_to = "benefit",
     values_to = "response"
   ) |>
- # mutate(response_binary = response) |>
   group_by(benefit) |>
   summarise(
     n = sum(response),
@@ -1019,7 +907,16 @@ mh_benefit_p <- ggplot(mh_summary_table, aes(x = reorder(benefit, percent), y = 
   ylim(0, 100) +
   theme_minimal() +
   coord_flip() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")
+
+ggsave(
+  filename = file.path("output/q41_mental_health_benefits.svg"),
+  plot = mh_benefit_p,
+  width = 16,
+  height = 6,
+  units = "in"
+)
 
 mh_benefit_p 
 
@@ -1082,6 +979,67 @@ q48_plot <-
 
 q48_plot
 
+q48x <- crosstabs(data, q48, role) |>
+  mutate(answer = q48) |>
+  mutate(
+    role = factor(role)
+  ) |>
+  group_by(answer) |>
+  mutate(total_pct = sum(pct)) |>
+  ungroup() |>
+  mutate(
+    answer = factor(answer,
+                    levels = unique(answer[order(-total_pct)]))
+  ) |>
+  complete(role, answer, fill = list(pct = 0.001)
+  )
+
+q48x_plot <- 
+  ggplot(q48x, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = .95) +
+  labs(title = "Which do you prefer?",
+       x = "",
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = -0.5, hjust = 0.5, size = 4) +
+  scale_x_discrete(labels = benefit_labels) +
+  scale_y_continuous(limits = c(0,0.75),
+                     labels = scales::percent) +
+  scale_fill_manual(
+    values = c(
+      "Shorter prison sentences and using money saved to fund youth vio" = "#6BAED6",
+      "Longer prison sentences and maintaining the prison budget to kee" = "#f47d20",
+      "Don’t know" = "black"
+    ),
+    labels = q48_labels
+  ) +
+  facet_wrap(~role, strip.position = "bottom",
+             labeller = labeller(role = c(
+               "Custodial Officers" = "Custodial Officers (n = 55)",
+               "Investigators/Detectives" = "Investigators/Detectives (n = 26)",
+               "Patrol or Field Officers" = "Patrol or Field Officers (n = 90)",
+               "Probation Officers" = "Probation Officers (n = 22)",
+               "Supervisors" = "Supervisors (n = 56)",
+               "Other" = "Other (n = 28)"
+             ))) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  #coord_flip() +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        #strip.text = element_text(face = "plain", hjust = 0),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        strip.placement = "outside",
+        strip.text = element_text(hjust = 0.5),
+        panel.spacing.y = unit(0.5, "lines"),
+        legend.position = "bottom",
+        legend.direction = "vertical")
+
+q48x_plot
 
 ###### Q49: For people who have completed their sentences and remained crime-free, which do you prefer: ############
 
@@ -1128,9 +1086,18 @@ q49_all_plot
 ######### Q49 x role ################
 q49x <- crosstabs(data, q49, role) |>
   mutate(answer = q49) |>
-  group_by(role) |>
-  mutate(answer = factor(answer, levels = answer[order(-pct)])) |>
-  ungroup()
+  mutate(
+    role = factor(role)
+  ) |>
+  group_by(answer) |>
+  mutate(total_pct = sum(pct)) |>
+  ungroup() |>
+  mutate(
+    answer = factor(answer,
+                    levels = unique(answer[order(-total_pct)]))
+  ) |>
+  complete(role, answer, fill = list(pct = 0.001)
+  )
 
 q49x_plot <- 
   ggplot(q49x, aes(x = answer, y = pct, fill = answer)) +
@@ -1155,8 +1122,8 @@ q49x_plot <-
              labeller = labeller(role = c(
                "Custodial Officers" = "Custodial Officers (n = 55)",
                "Investigators/Detectives" = "Investigators/Detectives (n = 26)",
-               "Patrol or Field Officers" = "Patrol or Field Officers (n = 99)",
-               "Probation Officers" = "Probation Officers (n = 13)",
+               "Patrol or Field Officers" = "Patrol or Field Officers (n = 90)",
+               "Probation Officers" = "Probation Officers (n = 22)",
                "Supervisors" = "Supervisors (n = 56)",
                "Other" = "Other (n = 28)"
                ))) +
@@ -1214,12 +1181,21 @@ q45_all_plot <-
 
 q45_all_plot
 
-
+ggsave(
+  filename = file.path("output/q45_all.svg"),
+  plot = q45_all_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
 
 ##### Q45 custodial ##########
 
 custodial <- data |> 
   filter(grepl("Custodial", role))
+
+probation <- data |>
+  filter(grepl("robation", role))
 
 q45_custodial <- export(custodial, q45)
 
@@ -1259,12 +1235,19 @@ q45_custodial_plot
 #### Q45 x role #####
 q45x <- crosstabs(data, q45, role) |>
   mutate(answer = q45) |>
-  group_by(role) |>
-  mutate(answer = factor(answer, levels = answer[order(-pct)])) |>
-  ungroup() 
-  
-table(data$role)
-
+  mutate(
+    role = factor(role)
+  ) |>
+  group_by(answer) |>
+  mutate(total_pct = sum(pct)) |>
+  ungroup() |>
+  mutate(
+    answer = factor(answer,
+                    levels = unique(answer[order(-total_pct)]))
+  ) |>
+  complete(role, answer, fill = list(pct = 0.001)
+  )
+    
 q45x_plot <- 
   ggplot(q45x, aes(x = answer, y = pct, fill = answer)) +
   geom_col(width = .85) +
@@ -1468,8 +1451,8 @@ q46x <- crosstabs(data, q46, role) |>
   mutate(
     answer = factor(answer,
                     levels = unique(answer[order(-total_pct)]))
-  # ) |>
-  # complete(role, answer, fill = list(pct = 0.001)
+   ) |>
+   complete(role, answer, fill = list(pct = 0.001)
   )
 
 q46x_plot <- 
@@ -1560,7 +1543,7 @@ q50_all_plot <-
 q50_all_plot
 
 
-### Q51 all ####
+##### Q51: If your city experienced a spike in violence, which would be most effective way to address it #####
 q51 <- export(data, q51)
 
 q51 <- tabs(data, q51) |>
@@ -1608,7 +1591,7 @@ q51_all_plot <-
 q51_all_plot
 
 
-### Q52 all ####
+########## Q52: are national guard capable of effectively patrolling US cities ########## 
 q52 <- export(data, q52)
 
 q52 <- tabs(data, q52) |>
@@ -1621,7 +1604,6 @@ q52_labels <- c(
   "US military national guard soldiers are capable of effectively p" = "US military national guard soldiers are capable of effectively patrolling US cities and reducing crime"
 )
 
-q48 <- export(data, q48)
 q52_all_plot <- 
   ggplot(q52, aes(x = answer, y = pct, fill = answer)) +
   geom_col(width = 0.75) +
@@ -1654,3 +1636,110 @@ q52_all_plot <-
 
 q52_all_plot
 
+
+
+
+########## graveyard ########## 
+
+# program_ci <- programs_summary_table |>
+#   filter(support == "Agree") |>
+#   mutate(
+#     worked = factor(worked, labels = c("Did not work", "Worked")),
+#     se = sqrt(percent * (1 - percent) / n),
+#     ci_low = percent - 1.96 * se,
+#     ci_high = percent + 1.96 * se
+#   )
+
+##plot of program support by worked
+# p1 <- programs_summary_table |>
+#   mutate(
+#     worked = factor(worked, labels = c("Did not work", "Worked")) ) |>
+#   filter(support == "Agree") |>
+#   ggplot(aes(x = worked, y = percent, fill = worked)) +
+#   geom_col() +
+#   scale_y_continuous(limits = c(0,1),
+#                      labels = scales::percent) +
+#   facet_wrap(~ program) +
+#   labs(
+#     x = NULL,
+#     y = "Percent who agree"
+#   ) +
+#   theme_minimal() +
+#   theme(strip.text = element_text(face = "bold"))
+# 
+# p1
+
+# cvi_plot <- programs_summary_table |>
+#   filter(program == "violence interruption",
+#          support == "Agree") |>
+#   mutate(
+#     worked  = factor(worked, labels = c("Did not work", "Worked")),
+#     support = factor(support, levels = c("Agree", "Disagree"))
+#   ) |>
+#   ggplot(aes(x = support, y = percent, fill = worked)) +
+#   geom_col(position = position_dodge(width = 0.8)) +
+#   geom_text(
+#     aes(label = paste0(round(percent*100), "%")),
+#     position = position_dodge(width = 0.8),
+#     vjust = -0.75,
+#     size = 3,
+#     fontface = "bold") +
+#   labs(
+#     title = "cvi",
+#     x = NULL,
+#     y = "Percent of respondents",
+#     fill = "Worked in program"
+#    )+
+#   theme_minimal() +
+#   theme(
+#     axis.text.y  = element_blank(),
+#     axis.ticks.y = element_blank(),
+#     strip.text = element_text(face = "plain", hjust = 0),
+#     axis.text.x = element_text(hjust = 0.5),
+#     plot.title = element_text(face = "bold", hjust = 0.5)
+#   )
+# 
+# cvi_plot
+
+#####ODDS RATIOS BETWEEN WORKED GROUPS
+# or_df <- programs_summary_table |>
+#   filter(support %in% c("Agree", "Disagree")) |>
+#   group_by(program, worked, support) |>
+#   summarise(n = sum(n), .groups = "drop") |>
+#   pivot_wider(
+#     names_from = c(worked, support),
+#     values_from = n,
+#     names_sep = "_"
+#   )
+
+# or_df <- or_df |>
+#   mutate(
+#     or = (`1_Agree` / `1_Disagree`) / (`0_Agree` / `0_Disagree`)
+#   )
+# 
+# or_df <- or_df |>
+#   mutate(
+#     or_label = round(or, 2),
+#     direction = ifelse(or > 1, "Above 1", "Below 1")
+#   )
+
+# p6 <- ggplot(or_df, aes(x = reorder(program, or), y = or)) +
+#   geom_segment(aes(xend = program, y = 1, yend = or), color = "gray80") +
+#   geom_point(aes(color = direction), size = 5) +
+#   geom_text(aes(label = paste0((or_label), "x"), hjust = ifelse(or > 1, -0.5, 1.5)), size = 3.5) +
+#   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+#   scale_y_log10() +
+#   coord_flip() +  
+#   scale_color_manual(values = c("Above 1" = "#003972", "Below 1" = "#f47d20")) +
+#   labs(
+#     x = NULL,
+#     title = "Odds Ratios by Program",
+#     color = "Direction"
+#   ) +
+#   theme_minimal() +
+#   theme(
+#     axis.text.x = element_text(face = "bold"),
+#     plot.title = element_text(face = "bold", hjust = 0.5)
+#   )
+# 
+# p6
