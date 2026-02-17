@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='864.00pt' height='432.00pt' viewBox='0 0 864.00 432.00'>
+<g class='svglite'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+    .svglite g.glyphgroup path {
+      fill: inherit;
+      stroke: none;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<defs>
+  <clipPath id='cpMC4wMHw4NjQuMDB8MC4wMHw0MzIuMDA='>
+    <rect x='0.00' y='0.00' width='864.00' height='432.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHw4NjQuMDB8MC4wMHw0MzIuMDA=)'>
+<rect x='0.00' y='0.00' width='864.00' height='432.00' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+</g>
+<defs>
+  <clipPath id='cpNDUuNjF8ODU4LjUyfDM3LjQzfDQyNi41Mg=='>
+    <rect x='45.61' y='37.43' width='812.91' height='389.09' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpNDUuNjF8ODU4LjUyfDM3LjQzfDQyNi41Mg==)'>
+<rect x='503.19' y='81.65' width='268.23' height='123.80' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6BAED6;' />
+<rect x='45.61' y='81.65' width='457.58' height='123.80' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #08306B;' />
+<rect x='69.28' y='258.51' width='39.45' height='123.80' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #FDBE85;' />
+<rect x='45.61' y='258.51' width='23.67' height='123.80' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #D94801;' />
+<text x='110.88' y='323.97' style='font-size: 9.96px; font-family: "Arial";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>8%</text>
+<text x='774.41' y='147.11' style='font-size: 9.96px; font-family: "Arial";' textLength='19.91px' lengthAdjust='spacingAndGlyphs'>92%</text>
+</g>
+<g clip-path='url(#cpMC4wMHw4NjQuMDB8MC4wMHw0MzIuMDA=)'>
+<text x='40.68' y='323.56' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='35.20px' lengthAdjust='spacingAndGlyphs'>Disagree</text>
+<text x='40.68' y='146.70' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='23.47px' lengthAdjust='spacingAndGlyphs'>Agree</text>
+<text x='45.61' y='14.93' style='font-size: 13.20px; font-family: "Arial";' textLength='353.12px' lengthAdjust='spacingAndGlyphs'>Police departments are burdened with a wide range of social</text>
+<text x='45.61' y='29.18' style='font-size: 13.20px; font-family: "Arial";' textLength='140.66px' lengthAdjust='spacingAndGlyphs'>problems beyond crime.</text>
+</g>
+</g>
+</svg>

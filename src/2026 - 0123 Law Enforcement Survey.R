@@ -454,7 +454,17 @@ agree_totals <- function(v1) {
       paste0(var2, " ", title$question, ".csv")
     ),
     row.names = FALSE
+    
+    
   )  
+  
+  ggsave(
+        filename = file.path("output", paste0(var2, " ", title$question, "_chart.svg")),
+        plot = plot_stacked,
+        width = 12,
+        height = 6,
+        units = "in"
+      )
   
   print(plot_stacked)
   print(q)
@@ -466,12 +476,12 @@ agree_totals(q31)
 agree_totals(q32)
 agree_totals(q33)
 agree_totals(q34)
-agree_totals(q35)
-agree_totals(q36)
-agree_totals(q37)
-agree_totals(q38)
-agree_totals(q39)
-agree_totals(q40)
+# agree_totals(q35)
+# agree_totals(q36)
+# agree_totals(q37)
+# agree_totals(q38)
+# agree_totals(q39)
+# agree_totals(q40)
 
 
 ###### Q35 to Q40 df #############
@@ -788,6 +798,8 @@ programs_summary_table <- programs_summary_table |>
     program == "q35" ~ "online reporting"
   ))
 
+programs_worked_summary_table <- 
+
 ####### relative rate q35 to q40 by q41 worked #########
 
 rr_df <- programs_summary_table |>
@@ -934,6 +946,109 @@ diversion <- programs_temp |>
 
 # 65% of people who have experience working with mental health clinicians or social workers think it is beneficial that clinicians can ensure people who need help get appropriate services or treatment and can divert them away from the justice system
   
+
+###### Q47: When there is x, crime goes down. ############
+q47 <- tabs(data, q47) |>
+  mutate(answer = factor(answer, levels = answer[order(pct)]))
+
+q47_stacked <- q47 |>
+  mutate(q47_stacked_answer = case_when(answer %in% c("When communities have strong neighborhood safety programs, crime", "When there are cleaner neighborhoods, crime goes down", "When families have stability, crime goes down", "When there are more jobs and housing, crime goes down") ~ "Community-based solutions",
+                                        answer %in% c("When there are more arrests, crime goes down", "When there are longer prison sentences, crime goes down", "When there are longer prison sentences, crime goes down", "When more crimes are solved, crime goes down") ~ "Criminal justice system solutions",
+                                        answer == "Don’t know" ~ "Don’t know"))
+
+q47_stacked$q47_stacked_answer <- factor(
+  q47_stacked$q47_stacked_answer,
+  levels = c("Don’t know",
+             "Criminal justice system solutions",
+             "Community-based solutions"
+             )
+  )
+
+q47_labels <- c(
+  "When communities have strong neighborhood safety programs, crime" = "When communities have strong neighborhood safety programs, crime goes down",
+  "When there are cleaner neighborhoods, crime goes down" = "When there are cleaner neighborhoods, crime goes down",
+  "When families have stability, crime goes down" = "When families have stability, crime goes down",
+  "When there are more arrests, crime goes down" = "When there are more arrests, crime goes down",
+  "When there are longer prison sentences, crime goes down" = "When there are longer prison sentences, crime goes down",
+  "When more crimes are solved, crime goes down" = "When more crimes are solved, crime goes down",
+  "When there are more jobs and housing, crime goes down" = "When there are more jobs and housing, crime goes down",
+  "Don’t know" = "Don’t know"
+)
+
+unique(data$q47)
+
+q47_plot <- 
+  ggplot(q47, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = 0.7) +
+  labs(
+       x = "Answer",
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = -0.5, hjust = 0.5, size = 4) +
+  scale_x_discrete(labels = benefit_labels) +
+  scale_y_continuous(limits = c(0,0.5),
+                     labels = scales::percent) +
+  scale_fill_manual(
+    values = c(
+      "When communities have strong neighborhood safety programs, crime" = "#6BAED6",
+      "When there are cleaner neighborhoods, crime goes down" = "#009d8f",
+      "When families have stability, crime goes down" = "#193f72",
+      "When there are more arrests, crime goes down" = "#ced4dc",
+      "When there are longer prison sentences, crime goes down" = "#f47d20",
+      "When more crimes are solved, crime goes down" = "#c5a5a5",
+      "When there are more jobs and housing, crime goes down" = "#fef3ee",
+      "Don’t know" = "black"
+    ),
+    labels = q47_labels
+  ) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  #coord_flip() +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        strip.text = element_text(face = "plain", hjust = 0),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+       # legend.position = "bottom",
+        legend.direction = "vertical")
+
+q47_plot
+
+q47_stacked_plot <- 
+  ggplot(q47_stacked, aes(x = q47_stacked_answer, y = pct, fill = answer)) +
+  geom_col(width = 0.7) +
+  labs(
+       x = NULL,
+       y = "Percentage",
+       fill = "Response") +
+  scale_y_continuous(limits = c(0,1),
+                     labels = scales::percent) +
+  scale_fill_manual(
+    values = c(
+      "When communities have strong neighborhood safety programs, crime" = "#6BAED6",
+      "When there are cleaner neighborhoods, crime goes down" = "#009d8f",
+      "When families have stability, crime goes down" = "#193f72",
+      "When there are more jobs and housing, crime goes down" = "#fef3ee",
+      "When there are more arrests, crime goes down" = "#ced4dc",
+      "When there are longer prison sentences, crime goes down" = "#f47d20",
+      "When more crimes are solved, crime goes down" = "#c5a5a5",
+      "Don’t know" = "black"
+    ),
+    labels = q47_labels
+  ) +
+  theme_minimal() +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  coord_flip() +
+  theme(
+    panel.grid = element_blank(),
+    #legend.position = "bottom",
+    legend.direction = "vertical"
+  )
+
+q47_stacked_plot
 
 ###### Q48: Shorter or longer prison sentences? ############
 
