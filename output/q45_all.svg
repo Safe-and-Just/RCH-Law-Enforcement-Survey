@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='864.00pt' height='432.00pt' viewBox='0 0 864.00 432.00'>
+<g class='svglite'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+    .svglite g.glyphgroup path {
+      fill: inherit;
+      stroke: none;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: none;'/>
+<defs>
+  <clipPath id='cpMC4wMHw4NjQuMDB8MC4wMHw0MzIuMDA='>
+    <rect x='0.00' y='0.00' width='864.00' height='432.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHw4NjQuMDB8MC4wMHw0MzIuMDA=)'>
+</g>
+<defs>
+  <clipPath id='cpNS40OHw4NTguNTJ8MjMuMTh8MzQxLjQz'>
+    <rect x='5.48' y='23.18' width='853.04' height='318.26' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpNS40OHw4NTguNTJ8MjMuMTh8MzQxLjQz)'>
+<rect x='44.25' y='55.73' width='582.32' height='108.50' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6BAED6;' />
+<rect x='44.25' y='200.39' width='451.67' height='108.50' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #F47D20;' />
+<text x='629.99' y='112.01' style='font-size: 11.38px; font-family: "Arial";' textLength='22.77px' lengthAdjust='spacingAndGlyphs'>56%</text>
+<text x='499.34' y='256.67' style='font-size: 11.38px; font-family: "Arial";' textLength='22.77px' lengthAdjust='spacingAndGlyphs'>44%</text>
+</g>
+<g clip-path='url(#cpMC4wMHw4NjQuMDB8MC4wMHw0MzIuMDA=)'>
+<text x='432.00' y='352.05' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='56.31px' lengthAdjust='spacingAndGlyphs'>Percentage</text>
+<text x='301.10' y='379.84' style='font-size: 11.00px; font-family: "Arial";' textLength='49.56px' lengthAdjust='spacingAndGlyphs'>Response</text>
+<rect x='301.81' y='387.19' width='15.86' height='15.86' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6BAED6;' />
+<rect x='301.81' y='404.47' width='15.86' height='15.86' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #F47D20;' />
+<text x='323.86' y='398.27' style='font-size: 8.80px; font-family: "Arial";' textLength='185.25px' lengthAdjust='spacingAndGlyphs'>Preventing crime by strengthening communities</text>
+<text x='323.86' y='415.55' style='font-size: 8.80px; font-family: "Arial";' textLength='239.03px' lengthAdjust='spacingAndGlyphs'>Responding to crime by punishing people who commit crimes</text>
+<text x='5.48' y='14.93' style='font-size: 13.20px; font-family: "Arial";' textLength='271.02px' lengthAdjust='spacingAndGlyphs'>Do you prefer that governments invest more in</text>
+</g>
+</g>
+</svg>
