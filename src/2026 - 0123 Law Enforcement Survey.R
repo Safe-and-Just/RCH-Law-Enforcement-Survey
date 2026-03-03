@@ -1,3 +1,5 @@
+#### if we get time to clean: create function for q44-q46, q48-q52 (challenge: assigning color)
+
 
 rm(list = ls())
 
@@ -99,7 +101,8 @@ data <- data %>%
                               TRUE ~ "Outside metro area"))
 
 
-table(data$role)
+table(data$q55)
+table(data$proximity)
 ####### tabs functions ######
 ####### v1 = question
 
@@ -337,7 +340,6 @@ agree <- function(data, v1) {
   
 }
 
-
 agree_totals <- function(v1) {
   
   q <- tabs(data, {{v1}}) 
@@ -406,8 +408,9 @@ agree_totals <- function(v1) {
       fill = "Response"
     ) +
     
-    scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +  # space for labels
-    
+    scale_y_continuous(limits = c(0,100),
+                       expand = expansion(mult = c(0, 0.12))) +  
+
     scale_x_discrete(
       labels = function(x) str_wrap(x, width = 20)   # <-- wrap category labels
     ) +
@@ -526,44 +529,109 @@ q35_40p_label <- q35_40p |>
 
 ###### Q35 to Q40 plot #############
 
-p_q35_40 <- ggplot(
-  q35_40p,
+q35_40p_signed <- q35_40p |>
+  mutate(
+    pct_signed = ifelse(agree_group == "Disagree", -pct, pct),
+    q = str_wrap(q, 40))
+
+
+q35_40_plot <- ggplot(
+  q35_40p_signed,
   aes(
-    x = agree_group,
-    y = pct,
+    x = pct_signed,
+    y = as.factor(q),
     fill = answer
   )
 ) +
   geom_col(width = 0.85) +
-  
-  geom_text(
-    data = q35_40p_label,
-    aes(
-      x = factor(agree_group, levels = c("Agree", "Disagree")),
-      y = pct,
-      label = paste0(pct, "%")
-    ),
-    vjust = -0.5,
-    size = 3.5,
-    inherit.aes = FALSE
-  ) +
-  
-  facet_wrap(
-    ~ str_wrap(q, 40),
-    scales = "free_x",
-    drop = FALSE
+  geom_vline(xintercept = 0, color = "white", linewidth = 1.75) + #white center line
+  scale_x_continuous(
+    limits = c(-50, 90),
+    labels = function(x) paste0(abs(x), "%")
   ) +
   scale_fill_manual(values = agree_disagree_colors) +
+  labs(
+    x = NULL,
+    y = NULL,
+    fill = NULL
+  ) +
+  geom_text(
+    data = q35_40p_plot |>
+      group_by(q) |>
+      summarize(pct_max = max(abs(pct_signed))),
+    aes(
+      x = 0,
+      y = q,
+      label = q
+    ),
+    vjust = -8, # exporting as svg puts the labels where they should at this vjust even though it may look way off when print plot in rstudio
+    fontface = "bold",
+    inherit.aes = FALSE
+  ) +
+  geom_text(
+    aes(
+      label = paste0(pct, "%")
+    ),
+    position = position_stack(vjust = 0.5),
+    size = 4,
+    fontface = "bold",
+    color = "white"
+  ) +
   theme_minimal() +
   theme(
-    axis.text.y  = element_blank(),
-    axis.ticks.y = element_blank(),
-    panel.grid   = element_blank()
+    panel.grid = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
   )
 
+q35_40_plot
+
+# p_q35_40_v <- ggplot(
+#   q35_40p,
+#   aes(
+#     x = agree_group,
+#     y = pct,
+#     fill = answer
+#   )
+# ) +
+#   geom_col(width = 0.85) +
+#   
+#   geom_text(
+#     data = q35_40p_label,
+#     aes(
+#       x = factor(agree_group, levels = c("Agree", "Disagree")),
+#       y = pct,
+#       label = paste0(pct, "%")
+#     ),
+#     vjust = -0.5,
+#     size = 3.5,
+#     inherit.aes = FALSE
+#   ) +
+#   
+#   scale_y_continuous(limits = c(0,100),
+#                      labels = scales::percent) +
+#   
+#   facet_wrap(
+#     ~ str_wrap(q, 40),
+#     scales = "free_x",
+#     drop = FALSE
+#   ) +
+#   scale_fill_manual(values = agree_disagree_colors) +
+#   theme_minimal() +
+#   theme(
+#     axis.text.y  = element_blank(),
+#     axis.ticks.y = element_blank(),
+#     panel.grid   = element_blank() 
+#   ) 
 
 
-p_q35_40
+ggsave(
+  filename = file.path("output/q35_q40_officers overwhelmingly agree that community-based programs benefit law enforcement and the community.svg"),
+  plot = q35_40_plot,
+  width = 12,
+  height = 12,
+  units = "in"
+)
 
 
 ###### BEYOND ####################
@@ -660,11 +728,11 @@ timeq <- function(v1) {
 }
 questions[questions$variable == "q17", 2]
 
-timeq(q19)
-timeq(q17)
-timeq(q18)
-timeq(q20)
-timeq(q22)
+q19 <- timeq(q19)
+q17 <- timeq(q17)
+q18 <- timeq(q18)
+q20 <- timeq(q20)
+q22 <- timeq(q22)
 
 time_charts <- bind_rows(timeq(q19),
                          timeq(q17),
@@ -691,6 +759,11 @@ time_charts <- time_charts |>
          experience = factor(experience, levels = experience_levels),
          role = factor(role))
 
+time_charts_minus_supervisors <- time_charts |>
+  filter(role != "Supervisors")
+
+write.csv(time_charts_minus_supervisors, "output/time_charts.csv")
+
 
 
 asj_colors <- function (...) {
@@ -701,6 +774,7 @@ asj_colors <- function (...) {
 
 
 charts_for_timeq <- function (char) {
+  time_plot <- 
 ggplot(subset(time_charts, grepl(char, role)), aes(x = experience, y = value, fill = name)) +
   geom_col(position = position_dodge(width = 0.8)) +
   asj_colors() +
@@ -729,7 +803,15 @@ ggplot(subset(time_charts, grepl(char, role)), aes(x = experience, y = value, fi
       panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
   )
-
+    
+    ggsave(
+      filename = file.path("output/", paste0("timeq_", char, "_chart.svg")),
+      plot = time_plot,
+      width = 12,
+      height = 6,
+      units = "in"
+    )
+  
 }
 
 charts_for_timeq("All")
@@ -798,7 +880,7 @@ programs_summary_table <- programs_summary_table |>
     program == "q35" ~ "online reporting"
   ))
 
-programs_worked_summary_table <- 
+# programs_worked_summary_table <- 
 
 ####### relative rate q35 to q40 by q41 worked #########
 
@@ -829,9 +911,16 @@ rrp1 <- ggplot(rr_df, aes(x = percent_more_likely, y = reorder(program, percent_
   labs(
     x = "Percent more likely to agree",
     y = NULL,
-    title = "Effect of working on agreement by program"
+    title = "Relative rate ratios of officers with direct program experience vs officers without program experience"
   ) +
   theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        strip.text = element_text(face = "plain", hjust = 0),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank()) +
   xlim(min(rr_df$percent_more_likely) * 1.2, max(rr_df$percent_more_likely) * 1.2) 
 
 ggsave(
@@ -914,13 +1003,22 @@ mh_benefit_p <- ggplot(mh_summary_table, aes(x = reorder(benefit, percent), y = 
   labs(
     x = "Benefit",
     y = "Percent",
-    title = "Percentage of Participants Agreeing to Each Benefit"
+    title = "Q41: Percentage of Participants Agreeing to Each Benefit"
   ) +
   ylim(0, 100) +
   theme_minimal() +
+  theme(#axis.text.x = element_blank(),
+         #axis.text.y = element_blank(),
+         panel.grid = element_blank(),
+  #       strip.text = element_text(face = "plain", hjust = 0),
+         panel.background = element_blank(),
+         plot.background  = element_blank(),
+         strip.background = element_blank()) +
   coord_flip() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "none")
+
+mh_benefit_p
 
 ggsave(
   filename = file.path("output/q41_mental_health_benefits.svg"),
@@ -930,7 +1028,7 @@ ggsave(
   units = "in"
 )
 
-mh_benefit_p 
+ 
 
 agree_disagree_colors <- c(
   "Strongly agree"      = "#08306B",  # dark blue
@@ -961,8 +1059,12 @@ q47_stacked$q47_stacked_answer <- factor(
   levels = c("Don’t know",
              "Criminal justice system solutions",
              "Community-based solutions"
-             )
   )
+)
+
+q47_stacked_all <- q47_stacked |>
+  group_by(q47_stacked_answer) |>
+  summarize(pct = sum(pct))
 
 q47_labels <- c(
   "When communities have strong neighborhood safety programs, crime" = "When communities have strong neighborhood safety programs, crime goes down",
@@ -975,17 +1077,49 @@ q47_labels <- c(
   "Don’t know" = "Don’t know"
 )
 
-unique(data$q47)
-
-q47_plot <- 
-  ggplot(q47, aes(x = answer, y = pct, fill = answer)) +
-  geom_col(width = 0.7) +
-  labs(
-       x = "Answer",
+q47_donut <- 
+  ggplot(q47_stacked_all, aes(x = 2, y = pct, fill = q47_stacked_answer)) +
+  geom_col(width = 0.75) +
+  coord_polar(theta = "y") +
+  xlim(0.5, 2.5) + #changes donut hole size
+  labs(title = "Q47",
+       x = NULL,
        y = "Percentage",
        fill = "Response") +
   geom_text(aes(label = paste0(round(pct*100), "%")),
-            vjust = -0.5, hjust = 0.5, size = 4) +
+            position = position_stack(vjust = 0.5),
+            size = 4,
+            color = "white")+
+  scale_fill_manual(
+    values = c("Don’t know" = "black",
+               "Criminal justice system solutions" = "#f47d20",
+               "Community-based solutions" = "#6BAED6"
+    )) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  theme_void()  
+
+q47_donut
+
+ggsave(
+  filename = file.path("output/q47_donut.svg"),
+  plot = q47_donut,
+  width = 16,
+  height = 6,
+  units = "in"
+)
+  
+unique(data$q47)
+
+q47_community_plot <- q47_stacked |>
+  filter(q47_stacked_answer == "Community-based solutions") |>
+  ggplot(aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = 0.7) +
+  labs(
+    x = "Answer",
+    y = "Percentage",
+    fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = 0, hjust = -0.1, size = 4) +
   scale_x_discrete(labels = benefit_labels) +
   scale_y_continuous(limits = c(0,0.5),
                      labels = scales::percent) +
@@ -994,16 +1128,11 @@ q47_plot <-
       "When communities have strong neighborhood safety programs, crime" = "#6BAED6",
       "When there are cleaner neighborhoods, crime goes down" = "#009d8f",
       "When families have stability, crime goes down" = "#193f72",
-      "When there are more arrests, crime goes down" = "#ced4dc",
-      "When there are longer prison sentences, crime goes down" = "#f47d20",
-      "When more crimes are solved, crime goes down" = "#c5a5a5",
-      "When there are more jobs and housing, crime goes down" = "#fef3ee",
-      "Don’t know" = "black"
-    ),
+      "When there are more jobs and housing, crime goes down" = "#38c3e1"),
     labels = q47_labels
   ) +
   guides(fill = guide_legend(reverse = TRUE)) +
-  #coord_flip() +
+  coord_flip() +
   theme_minimal() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -1012,10 +1141,62 @@ q47_plot <-
         panel.background = element_blank(),
         plot.background  = element_blank(),
         strip.background = element_blank(),
-       # legend.position = "bottom",
+        # legend.position = "bottom",
+        legend.direction = "vertical")
+  
+q47_community_plot
+
+q47_cj_plot <- q47_stacked |>
+  filter(q47_stacked_answer == "Criminal justice system solutions") |>
+  ggplot(aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = 0.7) +
+  labs(
+    x = "Answer",
+    y = "Percentage",
+    fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = 0, hjust = -0.1, size = 4) +
+  scale_x_discrete(labels = benefit_labels) +
+  scale_y_continuous(limits = c(0,0.5),
+                     labels = scales::percent) +
+  scale_fill_manual(
+    values = c(
+      "When there are more arrests, crime goes down" = "#D94801",
+      "When there are longer prison sentences, crime goes down" = "#f47d20",
+      "When more crimes are solved, crime goes down" = "#FDBE85"
+    ),
+    labels = q47_labels
+  ) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  coord_flip() +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        strip.text = element_text(face = "plain", hjust = 0),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        # legend.position = "bottom",
         legend.direction = "vertical")
 
-q47_plot
+q47_cj_plot
+
+ggsave(
+  filename = file.path("output/q47_community_plot.svg"),
+  plot = q47_community_plot,
+  width = 16,
+  height = 6,
+  units = "in"
+)
+
+ggsave(
+  filename = file.path("output/q47_cj_plot.svg"),
+  plot = q47_cj_plot,
+  width = 16,
+  height = 6,
+  units = "in"
+)
 
 q47_stacked_plot <- 
   ggplot(q47_stacked, aes(x = q47_stacked_answer, y = pct, fill = answer)) +
@@ -1049,216 +1230,6 @@ q47_stacked_plot <-
   )
 
 q47_stacked_plot
-
-###### Q48: Shorter or longer prison sentences? ############
-
-q48 <- tabs(data, q48) |>
-  mutate(answer = factor(answer, levels = answer[order(pct)]))
-
-q48_labels <- c(
-  "Shorter prison sentences and using money saved to fund youth vio" = "Shorter prison sentences and using money saved to fund youth violence prevention, mental health interventions, and addiction programs",
-  "Longer prison sentences and maintaining the prison budget to kee" = "Longer prison sentences and maintaining the prison budget to keep people incarcerated for the full length of their sentences",
-  "Don’t know" = "Don’t know"
-)
-
-q48_plot <- 
-  ggplot(q48, aes(x = answer, y = pct, fill = answer)) +
-  geom_col(width = 0.7) +
-  labs(title = "Which do you prefer?",
-       x = "Answer",
-       y = "Percentage",
-       fill = "Response") +
-  geom_text(aes(label = paste0(round(pct*100), "%")),
-            vjust = 0.25, hjust = -0.15, size = 4) +
-  scale_x_discrete(labels = benefit_labels) +
-  scale_fill_manual(
-    values = c(
-      "Shorter prison sentences and using money saved to fund youth vio" = "#6BAED6",
-      "Longer prison sentences and maintaining the prison budget to kee" = "#f47d20",
-      "Don’t know" = "black"
-    ),
-    labels = q48_labels
-  ) +
-  guides(fill = guide_legend(reverse = TRUE)) +
-  coord_flip() +
-  theme_minimal() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        panel.grid = element_blank(),
-        strip.text = element_text(face = "plain", hjust = 0),
-        panel.background = element_blank(),
-        plot.background  = element_blank(),
-        strip.background = element_blank(),
-        legend.position = "bottom",
-        legend.direction = "vertical")
-
-q48_plot
-
-q48x <- crosstabs(data, q48, role) |>
-  mutate(answer = q48) |>
-  mutate(
-    role = factor(role)
-  ) |>
-  group_by(answer) |>
-  mutate(total_pct = sum(pct)) |>
-  ungroup() |>
-  mutate(
-    answer = factor(answer,
-                    levels = unique(answer[order(-total_pct)]))
-  ) |>
-  complete(role, answer, fill = list(pct = 0.001)
-  )
-
-q48x_plot <- 
-  ggplot(q48x, aes(x = answer, y = pct, fill = answer)) +
-  geom_col(width = .95) +
-  labs(title = "Which do you prefer?",
-       x = "",
-       y = "Percentage",
-       fill = "Response") +
-  geom_text(aes(label = paste0(round(pct*100), "%")),
-            vjust = -0.5, hjust = 0.5, size = 4) +
-  scale_x_discrete(labels = benefit_labels) +
-  scale_y_continuous(limits = c(0,0.75),
-                     labels = scales::percent) +
-  scale_fill_manual(
-    values = c(
-      "Shorter prison sentences and using money saved to fund youth vio" = "#6BAED6",
-      "Longer prison sentences and maintaining the prison budget to kee" = "#f47d20",
-      "Don’t know" = "black"
-    ),
-    labels = q48_labels
-  ) +
-  facet_wrap(~role, strip.position = "bottom",
-             labeller = labeller(role = c(
-               "Custodial Officers" = "Custodial Officers (n = 55)",
-               "Investigators/Detectives" = "Investigators/Detectives (n = 26)",
-               "Patrol or Field Officers" = "Patrol or Field Officers (n = 90)",
-               "Probation Officers" = "Probation Officers (n = 22)",
-               "Supervisors" = "Supervisors (n = 56)",
-               "Other" = "Other (n = 28)"
-             ))) +
-  guides(fill = guide_legend(reverse = TRUE)) +
-  #coord_flip() +
-  theme_minimal() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        panel.grid = element_blank(),
-        #strip.text = element_text(face = "plain", hjust = 0),
-        panel.background = element_blank(),
-        plot.background  = element_blank(),
-        strip.background = element_blank(),
-        strip.placement = "outside",
-        strip.text = element_text(hjust = 0.5),
-        panel.spacing.y = unit(0.5, "lines"),
-        legend.position = "bottom",
-        legend.direction = "vertical")
-
-q48x_plot
-
-###### Q49: For people who have completed their sentences and remained crime-free, which do you prefer: ############
-
-q49 <- tabs(data, q49) |>
-  mutate(answer = factor(answer, levels = answer[order(pct)]))
-
-q49_labels <- c(
-  "Policies that allow them to clear their public records to expand" = "Policies that allow them to clear their public records to expand job opportunities and housing stability. Law enforcement would still maintain access",
-  "Policies that allow records to appear on background checks for e" = "Policies that allow records to appear on background checks for employment or housing"
-)
-
-q49_all_plot <- 
-  ggplot(q49, aes(x = answer, y = pct, fill = answer)) +
-  geom_col(width = 0.75) +
-  labs(title = "For people who have completed their sentences and remained crime-free, which do you prefer:",
-       x = NULL,
-       y = "Percentage",
-       fill = "Response") +
-  geom_text(aes(label = paste0(round(pct*100), "%")),
-            vjust = 0.25, hjust = -0.15, size = 4) +
-  scale_y_continuous(limits = c(0,0.75),
-                     labels = scales::percent) +
-  scale_fill_manual(
-    values = c(
-      "Policies that allow them to clear their public records to expand" = "#6BAED6",
-      "Policies that allow records to appear on background checks for e" = "#f47d20"
-    ),
-    labels = q49_labels
-  ) +
-  guides(fill = guide_legend(reverse = TRUE)) +
-  coord_flip() +
-  theme_minimal() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        panel.grid = element_blank(),
-        panel.background = element_blank(),
-        plot.background  = element_blank(),
-        strip.background = element_blank(),
-        legend.position = "bottom",
-        legend.direction = "vertical")
-
-q49_all_plot
-
-######### Q49 x role ################
-q49x <- crosstabs(data, q49, role) |>
-  mutate(answer = q49) |>
-  mutate(
-    role = factor(role)
-  ) |>
-  group_by(answer) |>
-  mutate(total_pct = sum(pct)) |>
-  ungroup() |>
-  mutate(
-    answer = factor(answer,
-                    levels = unique(answer[order(-total_pct)]))
-  ) |>
-  complete(role, answer, fill = list(pct = 0.001)
-  )
-
-q49x_plot <- 
-  ggplot(q49x, aes(x = answer, y = pct, fill = answer)) +
-  geom_col(width = .95) +
-  labs(title = "For people who have completed their sentences and remained crime-free, which do you prefer:",
-       x = "",
-       y = "Percentage",
-       fill = "Response") +
-  geom_text(aes(label = paste0(round(pct*100), "%")),
-            vjust = -0.5, hjust = 0.5, size = 4) +
-  scale_x_discrete(labels = benefit_labels) +
-  scale_y_continuous(limits = c(0,0.75),
-                     labels = scales::percent) +
-  scale_fill_manual(
-    values = c(
-      "Policies that allow them to clear their public records to expand" = "#6BAED6",
-      "Policies that allow records to appear on background checks for e" = "#f47d20"
-    ),
-    labels = q49_labels
-  ) +
-  facet_wrap(~role, strip.position = "bottom",
-             labeller = labeller(role = c(
-               "Custodial Officers" = "Custodial Officers (n = 55)",
-               "Investigators/Detectives" = "Investigators/Detectives (n = 26)",
-               "Patrol or Field Officers" = "Patrol or Field Officers (n = 90)",
-               "Probation Officers" = "Probation Officers (n = 22)",
-               "Supervisors" = "Supervisors (n = 56)",
-               "Other" = "Other (n = 28)"
-               ))) +
-  guides(fill = guide_legend(reverse = TRUE)) +
-  #coord_flip() +
-  theme_minimal() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        panel.grid = element_blank(),
-        #strip.text = element_text(face = "plain", hjust = 0),
-        panel.background = element_blank(),
-        plot.background  = element_blank(),
-        strip.background = element_blank(),
-        strip.placement = "outside",
-        strip.text = element_text(hjust = 0.5),
-        panel.spacing.y = unit(0.5, "lines"),
-        legend.position = "bottom",
-        legend.direction = "vertical")
-
-q49x_plot
 
 ##### Q45 all ##########
 q45 <- export(data, q45)
@@ -1304,49 +1275,6 @@ ggsave(
   units = "in"
 )
 
-##### Q45 custodial ##########
-
-custodial <- data |> 
-  filter(grepl("Custodial", role))
-
-probation <- data |>
-  filter(grepl("robation", role))
-
-q45_custodial <- export(custodial, q45)
-
-q45_custodial <- tabs(custodial, q45) |>
-  mutate(answer = factor(answer, levels = answer[order(pct)]))
-
-q45_custodial_plot <- 
-  ggplot(q45_custodial, aes(x = answer, y = pct, fill = answer)) +
-  geom_col(width = 0.75) +
-  labs(title = "Do you prefer that governments invest more in",
-       x = NULL,
-       y = "Percentage",
-       fill = "Response") +
-  geom_text(aes(label = paste0(round(pct*100), "%")),
-            vjust = 0.25, hjust = -0.15, size = 4) +
-  scale_y_continuous(limits = c(0,0.75),
-                     labels = scales::percent) +
-  scale_fill_manual(
-    values = c(
-      "Preventing crime by strengthening communities" = "#6BAED6",
-      "Responding to crime by punishing people who commit crimes" = "#f47d20"
-    )) +
-  guides(fill = guide_legend(reverse = TRUE)) +
-  coord_flip() +
-  theme_minimal() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        panel.grid = element_blank(),
-        panel.background = element_blank(),
-        plot.background  = element_blank(),
-        strip.background = element_blank(),
-        legend.position = "bottom",
-        legend.direction = "vertical")
-
-q45_custodial_plot
-
 #### Q45 x role #####
 q45x <- crosstabs(data, q45, role) |>
   mutate(answer = q45) |>
@@ -1361,18 +1289,19 @@ q45x <- crosstabs(data, q45, role) |>
                     levels = unique(answer[order(-total_pct)]))
   ) |>
   complete(role, answer, fill = list(pct = 0.001)
-  )
-    
+  ) |>
+  filter(role != "Other")
+
 q45x_plot <- 
   ggplot(q45x, aes(x = answer, y = pct, fill = answer)) +
   geom_col(width = .85) +
-  labs(title = "Do you prefer that governments invest more in",
+  labs(title = "Q45 Do you prefer that governments invest more in",
        x = "",
        y = "Percentage",
        fill = "Response") +
   geom_text(aes(label = paste0(round(pct*100), "%")),
             vjust = -0.5, hjust = 0.5, size = 4) +
- # scale_x_discrete(labels = benefit_labels) +
+  # scale_x_discrete(labels = benefit_labels) +
   scale_fill_manual(
     values = c(
       "Preventing crime by strengthening communities" = "#6BAED6",
@@ -1399,7 +1328,6 @@ q45x_plot <-
         panel.background = element_blank(),
         plot.background  = element_blank(),
         strip.background = element_blank(),
-        strip.placement = "outside",
         strip.text = element_text(hjust = 0.5),
         panel.spacing.y = unit(0.5, "lines"),
         legend.position = "bottom",
@@ -1407,51 +1335,74 @@ q45x_plot <-
 
 q45x_plot
 
+ggsave(
+  filename = file.path("output/q45x_plot.svg"),
+  plot = q45x_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
 
-##### Q44 all ##########
 
-q44 <- export(data, q44)
 
-q44 <- tabs(data, q44) |>
+
+###### Q48: Shorter or longer prison sentences? ############
+
+q48 <- tabs(data, q48) |>
   mutate(answer = factor(answer, levels = answer[order(pct)]))
 
-q44_all_plot <- 
-  ggplot(q44, aes(x = answer, y = pct, fill = answer)) +
-  geom_col(width = 0.75) +
-  labs(title = "What do you think is the most effective way to prevent people from committing repeat crimes?",
-       x = NULL,
+q48_labels <- c(
+  "Shorter prison sentences and using money saved to fund youth vio" = "Shorter prison sentences and using money saved to fund youth violence prevention, mental health interventions, and addiction programs",
+  "Longer prison sentences and maintaining the prison budget to kee" = "Longer prison sentences and maintaining the prison budget to keep people incarcerated for the full length of their sentences",
+  "Don’t know" = "Don’t know"
+)
+
+q48_all_plot <- 
+  ggplot(q48, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = 0.7) +
+  labs(title = "Q48: Which do you prefer?",
+       x = "Answer",
        y = "Percentage",
        fill = "Response") +
   geom_text(aes(label = paste0(round(pct*100), "%")),
             vjust = 0.25, hjust = -0.15, size = 4) +
+  scale_x_discrete(labels = benefit_labels) +
+  scale_y_continuous(limits = c(0,0.75),
+                     labels = scales::percent) +
   scale_fill_manual(
     values = c(
-      "Cognitive behavioral therapy and/or addiction treatment" = "#08306B",
-      "Job training and employment opportunities" = "#6BAED6",
-      "Don’t know" = "black",
-      "Long prison sentences" = "#f47d20"
-    )) +
+      "Shorter prison sentences and using money saved to fund youth vio" = "#6BAED6",
+      "Longer prison sentences and maintaining the prison budget to kee" = "#f47d20",
+      "Don’t know" = "black"
+    ),
+    labels = q48_labels
+  ) +
   guides(fill = guide_legend(reverse = TRUE)) +
   coord_flip() +
-  scale_y_continuous(limits = c(0,0.5),
-                     labels = scales::percent) +
   theme_minimal() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         panel.grid = element_blank(),
+        strip.text = element_text(face = "plain", hjust = 0),
         panel.background = element_blank(),
         plot.background  = element_blank(),
         strip.background = element_blank(),
-        #legend.position = "bottom",
-        #legend.direction = "vertical"
-        )
+        legend.position = "bottom",
+        legend.direction = "vertical")
 
-q44_all_plot
+q48_all_plot
 
+ggsave(
+  filename = file.path("output/q48_all_plot.svg"),
+  plot = q48_all_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
 
-#### Q44 x role #####
-q44x <- crosstabs(data, q44, role) |>
-  mutate(answer = q44) |>
+#### q48 x role ####
+q48x <- crosstabs(data, q48, role) |>
+  mutate(answer = q48) |>
   mutate(
     role = factor(role)
   ) |>
@@ -1462,37 +1413,41 @@ q44x <- crosstabs(data, q44, role) |>
     answer = factor(answer,
                     levels = unique(answer[order(-total_pct)]))
   ) |>
-  complete(role, answer, fill = list(pct = 0.001))
+  complete(role, answer, fill = list(pct = 0.001)
+  ) |>
+  filter(role != "Other")
 
-q44x_plot <- 
-  ggplot(q44x, aes(x = answer, y = pct, fill = answer)) +
-  geom_col(width = .85) +
-  labs(title = "What do you think is the most effective way to prevent people from committing repeat crimes?",
+q48x_plot <- 
+  ggplot(q48x, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = .95) +
+  labs(title = "Q48 Which do you prefer?",
        x = "",
        y = "Percentage",
        fill = "Response") +
   geom_text(aes(label = paste0(round(pct*100), "%")),
             vjust = -0.5, hjust = 0.5, size = 4) +
+  scale_x_discrete(labels = benefit_labels) +
+  scale_y_continuous(limits = c(0,0.75),
+                     labels = scales::percent) +
   scale_fill_manual(
     values = c(
-      "Cognitive behavioral therapy and/or addiction treatment" = "#08306B",
-      "Job training and employment opportunities" = "#6BAED6",
-      "Don’t know" = "black",
-      "Long prison sentences" = "#f47d20")) +
-  scale_color_discrete(drop = FALSE) +
+      "Shorter prison sentences and using money saved to fund youth vio" = "#6BAED6",
+      "Longer prison sentences and maintaining the prison budget to kee" = "#f47d20",
+      "Don’t know" = "black"
+    ),
+    labels = q48_labels
+  ) +
   facet_wrap(~role, strip.position = "bottom",
              labeller = labeller(role = c(
                "Custodial Officers" = "Custodial Officers (n = 55)",
                "Investigators/Detectives" = "Investigators/Detectives (n = 26)",
-               "Patrol or Field Officers" = "Patrol or Field Officers (n = 99)",
-               "Probation Officers" = "Probation Officers (n = 13)",
+               "Patrol or Field Officers" = "Patrol or Field Officers (n = 90)",
+               "Probation Officers" = "Probation Officers (n = 22)",
                "Supervisors" = "Supervisors (n = 56)",
                "Other" = "Other (n = 28)"
              ))) +
-  #guides(fill = guide_legend(reverse = TRUE)) +
+  guides(fill = guide_legend(reverse = TRUE)) +
   #coord_flip() +
-  scale_y_continuous(limits = c(0,1),
-                     labels = scales::percent) +
   theme_minimal() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -1501,13 +1456,20 @@ q44x_plot <-
         panel.background = element_blank(),
         plot.background  = element_blank(),
         strip.background = element_blank(),
-        strip.placement = "outside",
         strip.text = element_text(hjust = 0.5),
         panel.spacing.y = unit(0.5, "lines"),
-        #legend.position = "bottom",
+        legend.position = "bottom",
         legend.direction = "vertical")
 
-q44x_plot
+q48x_plot
+
+ggsave(
+  filename = file.path("output/q48x_plot.svg"),
+  plot = q48x_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
 
 
 ### Q46 all ####
@@ -1538,7 +1500,7 @@ q46_all_plot <-
     labels = q46_labels) +
   guides(fill = guide_legend(reverse = TRUE)) +
   coord_flip() +
-  scale_y_continuous(limits = c(0,0.85),
+  scale_y_continuous(limits = c(0,1),
                      labels = scales::percent) +
   theme_minimal() +
   theme(axis.text.x = element_blank(),
@@ -1553,6 +1515,13 @@ q46_all_plot <-
 
 q46_all_plot
 
+ggsave(
+  filename = file.path("output/q46_all_plot.svg"),
+  plot = q46_all_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
 
 #### Q46 x role #####
 q46x <- crosstabs(data, q46, role) |>
@@ -1565,15 +1534,17 @@ q46x <- crosstabs(data, q46, role) |>
   ungroup() |>
   mutate(
     answer = factor(answer,
-                    levels = unique(answer[order(-total_pct)]))
-   ) |>
-   complete(role, answer, fill = list(pct = 0.001)
-  )
+                    levels = unique(answer[order(-total_pct)])) #order for charts
+  ) |>
+  complete(role, answer, fill = list(pct = 0.001) #ensure tables and charts include 0s
+  ) |>
+  filter(role != "Other")
+
 
 q46x_plot <- 
   ggplot(q46x, aes(x = answer, y = pct, fill = answer)) +
   geom_col(width = .85) +
-  labs(title = "When people commit crimes, which do you think is generally the best way to hold them accountable?",
+  labs(title = "Q46 When people commit crimes, which do you think is generally the best way to hold them accountable?",
        x = "",
        y = "Percentage",
        fill = "Response") +
@@ -1589,8 +1560,8 @@ q46x_plot <-
              labeller = labeller(role = c(
                "Custodial Officers" = "Custodial Officers (n = 55)",
                "Investigators/Detectives" = "Investigators/Detectives (n = 26)",
-               "Patrol or Field Officers" = "Patrol or Field Officers (n = 99)",
-               "Probation Officers" = "Probation Officers (n = 13)",
+               "Patrol or Field Officers" = "Patrol or Field Officers (n = 90)",
+               "Probation Officers" = "Probation Officers (n = 22)",
                "Supervisors" = "Supervisors (n = 56)",
                "Other" = "Other (n = 28)"
              ))) +
@@ -1606,13 +1577,281 @@ q46x_plot <-
         panel.background = element_blank(),
         plot.background  = element_blank(),
         strip.background = element_blank(),
-        strip.placement = "outside",
         strip.text = element_text(hjust = 0.5),
         panel.spacing.y = unit(0.5, "lines"),
         legend.position = "bottom",
         legend.direction = "vertical")
 
 q46x_plot
+
+ggsave(
+  filename = file.path("output/q46x_plot.svg"),
+  plot = q46x_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
+
+##### Q44 all ##########
+
+q44 <- export(data, q44)
+
+q44 <- tabs(data, q44) |>
+  mutate(answer = factor(answer, levels = answer[order(pct)]))
+
+q44_all_donut_plot <- 
+  ggplot(q44, aes(x = 2, y = pct, fill = answer)) +
+  geom_col(width = 0.75) +
+  coord_polar(theta = "y") +
+  xlim(0.5, 2.5) + #changes donut hole size
+  labs(title = "Q44: What do you think is the most effective way to prevent people from committing repeat crimes?",
+       x = NULL,
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            position = position_stack(vjust = 0.5),
+            size = 4,
+            color = "white")+
+  scale_fill_manual(
+    values = c(
+      "Cognitive behavioral therapy and/or addiction treatment" = "#08306B",
+      "Job training and employment opportunities" = "#6BAED6",
+      "Don’t know" = "black",
+      "Long prison sentences" = "#f47d20"
+    )) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  theme_void()
+
+q44_all_donut_plot
+
+ggsave(
+  filename = file.path("output/q44_all_donut_plot.svg"),
+  plot = q44_all_donut_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
+
+q44_all_bar_plot <- 
+  ggplot(q44, aes(x = "Total", y = pct, fill = answer)) +
+  geom_col(width = 0.3, color = "white") +
+  coord_flip() +
+  labs(title = "Q44: What do you think is the most effective way to prevent people from committing repeat crimes?",
+       x = NULL,
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            position = position_stack(vjust = 0.5),
+            size = 4,
+            color = "white")+
+  scale_fill_manual(
+    values = c(
+      "Cognitive behavioral therapy and/or addiction treatment" = "#08306B",
+      "Job training and employment opportunities" = "#6BAED6",
+      "Don’t know" = "black",
+      "Long prison sentences" = "#f47d20"
+    )) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  theme_void()
+
+q44_all_bar_plot
+
+ggsave(
+  filename = file.path("output/q44_all_bar_plot.svg"),
+  plot = q44_all_bar_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
+
+
+#### Q44 x role #####
+q44x <- crosstabs(data, q44, role) |>
+  mutate(answer = q44) |>
+  mutate(
+    role = factor(role)
+  ) |>
+  group_by(answer) |>
+  mutate(total_pct = sum(pct)) |>
+  ungroup() |>
+  mutate(
+    answer = factor(answer,
+                    levels = unique(answer[order(-total_pct)]))
+  ) |>
+  complete(role, answer, fill = list(pct = 0.001)) |>
+  filter(role != "Other")
+
+q44x_plot <- 
+  ggplot(q44x, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = .85) +
+  labs(title = "Q44 What do you think is the most effective way to prevent people from committing repeat crimes?",
+       x = "",
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = -0.5, hjust = 0.5, size = 4) +
+  scale_fill_manual(
+    values = c(
+      "Cognitive behavioral therapy and/or addiction treatment" = "#08306B",
+      "Job training and employment opportunities" = "#6BAED6",
+      "Don’t know" = "black",
+      "Long prison sentences" = "#f47d20")) +
+  scale_color_discrete(drop = FALSE) +
+  facet_wrap(~role, strip.position = "bottom",
+             labeller = labeller(role = c(
+               "Custodial Officers" = "Custodial Officers (n = 55)",
+               "Investigators/Detectives" = "Investigators/Detectives (n = 26)",
+               "Patrol or Field Officers" = "Patrol or Field Officers (n = 90)",
+               "Probation Officers" = "Probation Officers (n = 22)",
+               "Supervisors" = "Supervisors (n = 56)",
+               "Other" = "Other (n = 28)"
+             ))) +
+  #guides(fill = guide_legend(reverse = TRUE)) +
+  #coord_flip() +
+  scale_y_continuous(limits = c(0,1),
+                     labels = scales::percent) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        #strip.text = element_text(face = "plain", hjust = 0),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(hjust = 0.5),
+        panel.spacing.y = unit(0.5, "lines"),
+        #legend.position = "bottom",
+        legend.direction = "vertical")
+
+q44x_plot
+
+ggsave(
+  filename = file.path("output/q44x_plot.svg"),
+  plot = q44x_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
+
+###### Q49: For people who have completed their sentences and remained crime-free, which do you prefer: ############
+
+q49 <- tabs(data, q49) |>
+  mutate(answer = factor(answer, levels = answer[order(pct)]))
+
+q49_labels <- c(
+  "Policies that allow them to clear their public records to expand" = "Policies that allow them to clear their public records to expand job opportunities and housing stability. Law enforcement would still maintain access",
+  "Policies that allow records to appear on background checks for e" = "Policies that allow records to appear on background checks for employment or housing"
+)
+
+q49_all_plot <- 
+  ggplot(q49, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = 0.75) +
+  labs(title = "For people who have completed their sentences and remained crime-free, which do you prefer:",
+       x = NULL,
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = 0.25, hjust = -0.15, size = 4) +
+  scale_y_continuous(limits = c(0,0.75),
+                     labels = scales::percent) +
+  scale_fill_manual(
+    values = c(
+      "Policies that allow them to clear their public records to expand" = "#6BAED6",
+      "Policies that allow records to appear on background checks for e" = "#f47d20"
+    ),
+    labels = q49_labels
+  ) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  coord_flip() +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        legend.position = "bottom",
+        legend.direction = "vertical")
+
+q49_all_plot
+
+ggsave(
+  filename = file.path("output/q49_all_plot.svg"),
+  plot = q49_all_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
+
+######### Q49 x role ################
+q49x <- crosstabs(data, q49, role) |>
+  mutate(answer = q49) |>
+  mutate(
+    role = factor(role)
+  ) |>
+  group_by(answer) |>
+  mutate(total_pct = sum(pct)) |>
+  ungroup() |>
+  mutate(
+    answer = factor(answer,
+                    levels = unique(answer[order(-total_pct)]))
+  ) |>
+  complete(role, answer, fill = list(pct = 0.001)
+  ) |>
+  filter(role != "Other")
+
+q49x_plot <- 
+  ggplot(q49x, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = .95) +
+  labs(title = "Q49 For people who have completed their sentences and remained crime-free, which do you prefer:",
+       x = "",
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = -0.5, hjust = 0.5, size = 4) +
+  scale_x_discrete(labels = benefit_labels) +
+  scale_y_continuous(limits = c(0,0.75),
+                     labels = scales::percent) +
+  scale_fill_manual(
+    values = c(
+      "Policies that allow them to clear their public records to expand" = "#6BAED6",
+      "Policies that allow records to appear on background checks for e" = "#f47d20"
+    ),
+    labels = q49_labels
+  ) +
+  facet_wrap(~role, strip.position = "bottom",
+             labeller = labeller(role = c(
+               "Custodial Officers" = "Custodial Officers (n = 55)",
+               "Investigators/Detectives" = "Investigators/Detectives (n = 26)",
+               "Patrol or Field Officers" = "Patrol or Field Officers (n = 90)",
+               "Probation Officers" = "Probation Officers (n = 22)",
+               "Supervisors" = "Supervisors (n = 56)",
+               "Other" = "Other (n = 28)"
+               ))) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  #coord_flip() +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        #strip.text = element_text(face = "plain", hjust = 0),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(hjust = 0.5),
+        panel.spacing.y = unit(0.5, "lines"),
+        legend.position = "bottom",
+        legend.direction = "vertical")
+
+q49x_plot
+
+ggsave(
+  filename = file.path("output/q49x_plot.svg"),
+  plot = q49x_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
 
 ### Q50 all ####
 q50 <- export(data, q50)
@@ -1628,7 +1867,7 @@ q50_labels <- c(
 q50_all_plot <- 
   ggplot(q50, aes(x = answer, y = pct, fill = answer)) +
   geom_col(width = 0.75) +
-  labs(title = "For people in prison who are going to be released, do you prefer:",
+  labs(title = "Q50: For people in prison who are going to be released, do you prefer:",
        x = NULL,
        y = "Percentage",
        fill = "Response") +
@@ -1657,6 +1896,82 @@ q50_all_plot <-
 
 q50_all_plot
 
+ggsave(
+  filename = file.path("output/q50_all_plot.svg"),
+  plot = q50_all_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
+
+#### Q50 x role #####
+q50x <- crosstabs(data, q50, role) |>
+  mutate(answer = q50) |>
+  mutate(
+    role = factor(role)
+  ) |>
+  group_by(answer) |>
+  mutate(total_pct = sum(pct)) |>
+  ungroup() |>
+  mutate(
+    answer = factor(answer,
+                    levels = unique(answer[order(-total_pct)])) #order for charts
+  ) |>
+  complete(role, answer, fill = list(pct = 0.001) #ensure tables and charts include 0s
+  ) |>
+  filter(role != "Other")
+
+
+q50x_plot <- 
+  ggplot(q50x, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = .85) +
+  labs(title = "Q50 For people in prison who are going to be released, do you prefer:",
+       x = "",
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = -0.5, hjust = 0.5, size = 4) +
+  scale_fill_manual(
+    values = c(
+      "Rehabilitation-focused policies – authorize the parole board o" = "#6BAED6",
+      "Fixed-term policies – uniform policies that require everyone t" = "#f47d20"
+    ),
+    labels = q50_labels) +
+  facet_wrap(~role, strip.position = "bottom",
+             labeller = labeller(role = c(
+               "Custodial Officers" = "Custodial Officers (n = 55)",
+               "Investigators/Detectives" = "Investigators/Detectives (n = 26)",
+               "Patrol or Field Officers" = "Patrol or Field Officers (n = 90)",
+               "Probation Officers" = "Probation Officers (n = 22)",
+               "Supervisors" = "Supervisors (n = 56)",
+               "Other" = "Other (n = 28)"
+             ))) +
+  #guides(fill = guide_legend(reverse = TRUE)) +
+  #coord_flip() +
+  scale_y_continuous(limits = c(0,1),
+                     labels = scales::percent) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        #strip.text = element_text(face = "plain", hjust = 0),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(hjust = 0.5),
+        panel.spacing.y = unit(0.5, "lines"),
+        legend.position = "bottom",
+        legend.direction = "vertical")
+
+q50x_plot
+
+ggsave(
+  filename = file.path("output/q50x_plot.svg"),
+  plot = q50x_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
 
 ##### Q51: If your city experienced a spike in violence, which would be most effective way to address it #####
 q51 <- export(data, q51)
@@ -1672,10 +1987,10 @@ q51_labels <- c(
   "Expand policing in hot spots and neighborhood violence preventio" = "Expand policing in hot spots and neighborhood violence prevention programs"
 )
 
-q51_all_plot <- 
+q51_bar_plot <- 
   ggplot(q51, aes(x = answer, y = pct, fill = answer)) +
   geom_col(width = 0.75) +
-  labs(title = "If your city experienced a spike in violence, which would be most effective way to address it:",
+  labs(title = "Q51: If your city experienced a spike in violence, which would be most effective way to address it:",
        x = NULL,
        y = "Percentage",
        fill = "Response") +
@@ -1703,8 +2018,154 @@ q51_all_plot <-
         legend.direction = "vertical"
   )
 
-q51_all_plot
+q51_bar_stacked_plot <- 
+  ggplot(q51, aes(x = "Total", y = pct, fill = answer)) +
+  geom_col(width = 0.3, color = "white") +
+  coord_flip() +
+  labs(title = "Q51: If your city experienced a spike in violence, which would be most effective way to address it:",
+       x = NULL,
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            position = position_stack(vjust = 0.5),
+            size = 4,
+            color = "white")+
+  scale_fill_manual(
+    values = c(
+      "Expand policing in hot spots and neighborhood violence preventio" = "#08306B",
+      "Expand police patrols" = "#6BAED6",
+      "Deploy National Guard soldiers" = "#f47d20"
+    ),
+    labels = q51_labels) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  scale_y_continuous(limits = c(0,1),
+                     labels = scales::percent) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        legend.position = "bottom",
+        legend.direction = "vertical"
+  )
 
+q51_donut_plot <- 
+  ggplot(q51, aes(x = 2, y = pct, fill = answer)) +
+  geom_col(width = 0.75) +
+  coord_polar(theta = "y") +
+  xlim(0.5, 2.5) + #changes donut hole size
+  labs(title = "Q51: If your city experienced a spike in violence, which would be most effective way to address it:",
+       x = NULL,
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            position = position_stack(vjust = 0.5),
+            size = 4,
+            color = "white")+
+  scale_fill_manual(
+    values = c(
+      "Expand policing in hot spots and neighborhood violence preventio" = "#08306B",
+      "Expand police patrols" = "#6BAED6",
+      "Deploy National Guard soldiers" = "#f47d20"
+    ),
+    labels = q51_labels) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  theme_void() 
+
+q51_bar_plot
+q51_bar_stacked_plot
+q51_donut_plot
+
+ggsave(
+  filename = file.path("output/q51_bar_plot.svg"),
+  plot = q51_bar_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
+
+ggsave(
+  filename = file.path("output/q51_bar_stacked_plot.svg"),
+  plot = q51_bar_stacked_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
+
+ggsave(
+  filename = file.path("output/q51_donut_plot.svg"),
+  plot = q51_donut_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
+
+#### Q51 x proximity #####
+q51x <- crosstabs(data, q51, proximity) |>
+  mutate(answer = q51) |>
+  mutate(
+    proximity = factor(proximity)
+  ) |>
+  group_by(answer) |>
+  mutate(total_pct = sum(pct)) |>
+  ungroup() |>
+  mutate(
+    answer = factor(answer,
+                    levels = unique(answer[order(-total_pct)])) #order for charts
+  ) |>
+  complete(proximity, answer, fill = list(pct = 0.001) #ensure tables and charts include 0s
+  ) 
+
+table(data$proximity)
+
+q51x_plot <- 
+  ggplot(q51x, aes(x = answer, y = pct, fill = answer)) +
+  geom_col(width = .85) +
+  labs(title = "Q51 If your city experienced a spike in violence, which would be most effective way to address it:",
+       x = "",
+       y = "Percentage",
+       fill = "Response") +
+  geom_text(aes(label = paste0(round(pct*100), "%")),
+            vjust = -0.5, hjust = 0.5, size = 4) +
+  scale_fill_manual(
+    values = c(
+      "Expand policing in hot spots and neighborhood violence preventio" = "#08306B",
+      "Expand police patrols" = "#6BAED6",
+      "Deploy National Guard soldiers" = "#f47d20"
+    ),
+    labels = q51_labels) +
+  facet_wrap(~proximity, strip.position = "bottom",
+             labeller = labeller(proximity = c(
+               "Neighborhood" = "Neighborhood (n = 66)",
+               "City or metro area" = "City or metro area (n = 129)",
+               "Outside metro area" = "Outside metro area (n = 82)"
+             ))) +
+  scale_y_continuous(limits = c(0,1),
+                     labels = scales::percent) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        #strip.text = element_text(face = "plain", hjust = 0),
+        panel.background = element_blank(),
+        plot.background  = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(hjust = 0.5),
+        panel.spacing.y = unit(0.5, "lines"),
+        legend.position = "bottom",
+        legend.direction = "vertical")
+
+q51x_plot
+
+ggsave(
+  filename = file.path("output/q51x_plot.svg"),
+  plot = q51x_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
 
 ########## Q52: are national guard capable of effectively patrolling US cities ########## 
 q52 <- export(data, q52)
@@ -1751,7 +2212,13 @@ q52_all_plot <-
 
 q52_all_plot
 
-
+ggsave(
+  filename = file.path("output/q52_all_plot.svg"),
+  plot = q52_all_plot,
+  width = 12,
+  height = 6,
+  units = "in"
+)
 
 
 ########## graveyard ########## 
@@ -1816,7 +2283,7 @@ q52_all_plot
 # 
 # cvi_plot
 
-#####ODDS RATIOS BETWEEN WORKED GROUPS
+#####ODDS RATIOS BETWEEN WORKED GROUPS ####
 # or_df <- programs_summary_table |>
 #   filter(support %in% c("Agree", "Disagree")) |>
 #   group_by(program, worked, support) |>
@@ -1858,3 +2325,47 @@ q52_all_plot
 #   )
 # 
 # p6
+
+
+# ##### Q45 custodial ##########
+# 
+# custodial <- data |> 
+#   filter(grepl("Custodial", role))
+# 
+# probation <- data |>
+#   filter(grepl("robation", role))
+# 
+# q45_custodial <- export(custodial, q45)
+# 
+# q45_custodial <- tabs(custodial, q45) |>
+#   mutate(answer = factor(answer, levels = answer[order(pct)]))
+# 
+# q45_custodial_plot <- 
+#   ggplot(q45_custodial, aes(x = answer, y = pct, fill = answer)) +
+#   geom_col(width = 0.75) +
+#   labs(title = "Do you prefer that governments invest more in",
+#        x = NULL,
+#        y = "Percentage",
+#        fill = "Response") +
+#   geom_text(aes(label = paste0(round(pct*100), "%")),
+#             vjust = 0.25, hjust = -0.15, size = 4) +
+#   scale_y_continuous(limits = c(0,0.75),
+#                      labels = scales::percent) +
+#   scale_fill_manual(
+#     values = c(
+#       "Preventing crime by strengthening communities" = "#6BAED6",
+#       "Responding to crime by punishing people who commit crimes" = "#f47d20"
+#     )) +
+#   guides(fill = guide_legend(reverse = TRUE)) +
+#   coord_flip() +
+#   theme_minimal() +
+#   theme(axis.text.x = element_blank(),
+#         axis.text.y = element_blank(),
+#         panel.grid = element_blank(),
+#         panel.background = element_blank(),
+#         plot.background  = element_blank(),
+#         strip.background = element_blank(),
+#         legend.position = "bottom",
+#         legend.direction = "vertical")
+# 
+# q45_custodial_plot

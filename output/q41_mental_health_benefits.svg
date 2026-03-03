@@ -19,14 +19,13 @@
     }
   ]]></style>
 </defs>
-<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<rect width='100%' height='100%' style='stroke: none; fill: none;'/>
 <defs>
   <clipPath id='cpMC4wMHwxMTUyLjAwfDAuMDB8NDMyLjAw'>
     <rect x='0.00' y='0.00' width='1152.00' height='432.00' />
   </clipPath>
 </defs>
 <g clip-path='url(#cpMC4wMHwxMTUyLjAwfDAuMDB8NDMyLjAw)'>
-<rect x='0.00' y='0.000000000000057' width='1152.00' height='432.00' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
 </g>
 <defs>
   <clipPath id='cpNTM2LjUzfDExNDYuNTJ8MjMuMTh8MzkyLjUy'>
@@ -34,22 +33,6 @@
   </clipPath>
 </defs>
 <g clip-path='url(#cpNTM2LjUzfDExNDYuNTJ8MjMuMTh8MzkyLjUy)'>
-<polyline points='633.58,392.52 633.58,23.18 ' style='stroke-width: 0.53; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='772.21,392.52 772.21,23.18 ' style='stroke-width: 0.53; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='910.84,392.52 910.84,23.18 ' style='stroke-width: 0.53; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='1049.48,392.52 1049.48,23.18 ' style='stroke-width: 0.53; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='536.53,361.74 1146.52,361.74 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='536.53,310.44 1146.52,310.44 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='536.53,259.14 1146.52,259.14 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='536.53,207.85 1146.52,207.85 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='536.53,156.55 1146.52,156.55 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='536.53,105.25 1146.52,105.25 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='536.53,53.96 1146.52,53.96 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='564.26,392.52 564.26,23.18 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='702.89,392.52 702.89,23.18 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='841.53,392.52 841.53,23.18 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='980.16,392.52 980.16,23.18 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='1118.79,392.52 1118.79,23.18 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
 <rect x='564.26' y='236.06' width='284.27' height='46.17' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6BAED6;' />
 <rect x='564.26' y='287.36' width='176.17' height='46.17' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6BAED6;' />
 <rect x='564.26' y='133.47' width='322.31' height='46.17' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6BAED6;' />
@@ -80,7 +63,7 @@
 <text transform='translate(1123.25,401.90) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='14.67px' lengthAdjust='spacingAndGlyphs'>100</text>
 <text x='841.53' y='424.20' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='37.94px' lengthAdjust='spacingAndGlyphs'>Percent</text>
 <text transform='translate(13.36,207.85) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='34.28px' lengthAdjust='spacingAndGlyphs'>Benefit</text>
-<text x='536.53' y='14.93' style='font-size: 13.20px; font-family: "Arial";' textLength='303.30px' lengthAdjust='spacingAndGlyphs'>Percentage of Participants Agreeing to Each Benefit</text>
+<text x='536.53' y='14.93' style='font-size: 13.20px; font-family: "Arial";' textLength='335.52px' lengthAdjust='spacingAndGlyphs'>Q41: Percentage of Participants Agreeing to Each Benefit</text>
 </g>
 </g>
 </svg>

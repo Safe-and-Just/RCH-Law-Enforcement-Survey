@@ -1,0 +1,46 @@
+"","role","name","value","experience","max"
+"1","All","A few times a week",51,"homelessness",91
+"2","All","At least a few times a year",82,"homelessness",91
+"3","All","Ever",91,"homelessness",91
+"4","Custodial Officers","A few times a week",40,"homelessness",91
+"5","Custodial Officers","At least a few times a year",71,"homelessness",91
+"6","Custodial Officers","Ever",82,"homelessness",91
+"7","Patrol or Field Officers","A few times a week",58,"homelessness",91
+"8","Patrol or Field Officers","At least a few times a year",88,"homelessness",91
+"9","Patrol or Field Officers","Ever",94,"homelessness",91
+"10","All","A few times a week",32,"drug overdoses",94
+"11","All","At least a few times a year",77,"drug overdoses",94
+"12","All","Ever",94,"drug overdoses",94
+"13","All","A few times a week",17,"suicide attempts",94
+"14","All","At least a few times a year",70,"suicide attempts",94
+"15","All","Ever",94,"suicide attempts",94
+"16","Custodial Officers","A few times a week",49,"drug overdoses",94
+"17","Custodial Officers","At least a few times a year",89,"drug overdoses",94
+"18","Custodial Officers","Ever",96,"drug overdoses",94
+"19","Custodial Officers","A few times a week",15,"suicide attempts",94
+"20","Custodial Officers","At least a few times a year",78,"suicide attempts",94
+"21","Custodial Officers","Ever",96,"suicide attempts",94
+"22","Patrol or Field Officers","A few times a week",32,"drug overdoses",94
+"23","Patrol or Field Officers","At least a few times a year",74,"drug overdoses",94
+"24","Patrol or Field Officers","Ever",92,"drug overdoses",94
+"25","Patrol or Field Officers","A few times a week",21,"suicide attempts",94
+"26","Patrol or Field Officers","At least a few times a year",73,"suicide attempts",94
+"27","Patrol or Field Officers","Ever",94,"suicide attempts",94
+"28","All","A few times a week",42," violent crime in progress",95
+"29","All","At least a few times a year",79," violent crime in progress",95
+"30","All","Ever",95," violent crime in progress",95
+"31","Custodial Officers","A few times a week",27," violent crime in progress",95
+"32","Custodial Officers","At least a few times a year",75," violent crime in progress",95
+"33","Custodial Officers","Ever",93," violent crime in progress",95
+"34","Patrol or Field Officers","A few times a week",51," violent crime in progress",95
+"35","Patrol or Field Officers","At least a few times a year",90," violent crime in progress",95
+"36","Patrol or Field Officers","Ever",99," violent crime in progress",95
+"37","All","A few times a week",64,"mental health crises",99
+"38","All","At least a few times a year",94,"mental health crises",99
+"39","All","Ever",99,"mental health crises",99
+"40","Custodial Officers","A few times a week",75,"mental health crises",99
+"41","Custodial Officers","At least a few times a year",96,"mental health crises",99
+"42","Custodial Officers","Ever",100,"mental health crises",99
+"43","Patrol or Field Officers","A few times a week",58,"mental health crises",99
+"44","Patrol or Field Officers","At least a few times a year",90,"mental health crises",99
+"45","Patrol or Field Officers","Ever",98,"mental health crises",99

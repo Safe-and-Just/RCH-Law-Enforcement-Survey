@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='1152.00pt' height='432.00pt' viewBox='0 0 1152.00 432.00'>
+<g class='svglite'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+    .svglite g.glyphgroup path {
+      fill: inherit;
+      stroke: none;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: none;'/>
+<defs>
+  <clipPath id='cpMC4wMHwxMTUyLjAwfDAuMDB8NDMyLjAw'>
+    <rect x='0.00' y='0.00' width='1152.00' height='432.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHwxMTUyLjAwfDAuMDB8NDMyLjAw)'>
+</g>
+<defs>
+  <clipPath id='cpMTguNDF8Nzg1LjYxfDUuNDh8NDEzLjU5'>
+    <rect x='18.41' y='5.48' width='767.19' height='408.11' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMTguNDF8Nzg1LjYxfDUuNDh8NDEzLjU5)'>
+<rect x='53.29' y='126.94' width='287.04' height='68.02' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6BAED6;' />
+<rect x='53.29' y='321.28' width='110.79' height='68.02' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #009D8F;' />
+<rect x='53.29' y='29.77' width='463.29' height='68.02' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #193F72;' />
+<rect x='53.29' y='224.11' width='171.22' height='68.02' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #38C3E1;' />
+<text x='342.60' y='160.95' style='font-size: 11.38px; font-family: "Arial";' textLength='22.77px' lengthAdjust='spacingAndGlyphs'>21%</text>
+<text x='165.72' y='355.28' style='font-size: 11.38px; font-family: "Arial";' textLength='16.44px' lengthAdjust='spacingAndGlyphs'>8%</text>
+<text x='518.85' y='63.78' style='font-size: 11.38px; font-family: "Arial";' textLength='22.77px' lengthAdjust='spacingAndGlyphs'>33%</text>
+<text x='226.78' y='258.12' style='font-size: 11.38px; font-family: "Arial";' textLength='22.77px' lengthAdjust='spacingAndGlyphs'>12%</text>
+</g>
+<g clip-path='url(#cpMC4wMHwxMTUyLjAwfDAuMDB8NDMyLjAw)'>
+<text x='402.01' y='424.20' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='56.31px' lengthAdjust='spacingAndGlyphs'>Percentage</text>
+<text transform='translate(13.36,209.53) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='36.69px' lengthAdjust='spacingAndGlyphs'>Answer</text>
+<text x='802.05' y='176.17' style='font-size: 11.00px; font-family: "Arial";' textLength='49.56px' lengthAdjust='spacingAndGlyphs'>Response</text>
+<rect x='802.76' y='183.52' width='15.86' height='15.86' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #193F72;' />
+<rect x='802.76' y='200.80' width='15.86' height='15.86' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6BAED6;' />
+<rect x='802.76' y='218.08' width='15.86' height='15.86' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #38C3E1;' />
+<rect x='802.76' y='235.36' width='15.86' height='15.86' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #009D8F;' />
+<text x='824.81' y='194.60' style='font-size: 8.80px; font-family: "Arial";' textLength='179.20px' lengthAdjust='spacingAndGlyphs'>When families have stability, crime goes down</text>
+<text x='824.81' y='211.88' style='font-size: 8.80px; font-family: "Arial";' textLength='316.23px' lengthAdjust='spacingAndGlyphs'>When communities have strong neighborhood safety programs, crime goes down</text>
+<text x='824.81' y='229.16' style='font-size: 8.80px; font-family: "Arial";' textLength='223.34px' lengthAdjust='spacingAndGlyphs'>When there are more jobs and housing, crime goes down</text>
+<text x='824.81' y='246.44' style='font-size: 8.80px; font-family: "Arial";' textLength='223.84px' lengthAdjust='spacingAndGlyphs'>When there are cleaner neighborhoods, crime goes down</text>
+</g>
+</g>
+</svg>
