@@ -1,10 +1,20 @@
+# This file replicates all the analyses published in the April 2026 report, 
+# "Law Enforcement Views on Safety and Justice," published by Just Safe and 
+# Alliance for Safety and Justice. Users should note that this will write 
+# multiple .csv and .svg files to a folder called "output" in your working 
+# directory. Users should modify this file by specifying a working directory 
+# that contains a folder called "output". 
+
+# The charts produced in this script do not exactly resemble those published 
+# in the report. The charts produced here were provided to graphic designers
+# who produced the reports used in the publication.
+
 library(haven)
 library(labelled)
 library(tidyverse)
 library(tidylog)
 library(janitor)
 library(stringi)
-# library(data.table)
 library(scales)
 library(purrr)
 library(rlang)
@@ -15,7 +25,7 @@ library(svglite)
 options(dplyr.print_max = 1e9)
 
 # Read SPSS-style data
-data <- read_sav("input/Law-enforcement-survey-character.sav")
+data <- read_sav("input/law-enforcement-survey-all-completions.sav")
 
 data <- clean_names(data)
 
@@ -238,7 +248,7 @@ export <- function(data, v1) {
       )
   }
   
- # write.csv(q, file = file.path("output", paste0(var2, ".csv")), row.names = F)
+  write.csv(q, file = file.path("output", paste0(var2, ".csv")), row.names = F)
   
   print(plot)
   
@@ -247,86 +257,6 @@ export <- function(data, v1) {
 }
 
 # Functions for agree/disagree stacked charts
-
-agree <- function(data, v1) {
-  
-  q <- auto(data, {{v1}}) 
-  
-  
-  q <- q %>%
-    mutate(
-      answer = factor(answer, levels = agree_stack_levels),
-      agree_group = case_when(
-            answer %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
-            answer %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
-            TRUE ~ NA_character_
-          ),
-          agree_group = factor(agree_group, levels = c("Agree", "Disagree")),
-          answer = factor(
-            answer,
-            levels = c(
-              "Somewhat agree",
-              "Strongly agree",
-              "Somewhat disagree",
-              "Strongly disagree"
-            )
-          )
-        )
-    
-  
-  var <- as.character(substitute(v1))
-  var2 <- deparse(substitute(v1))
-  title <- questions[questions$variable == var, ]
-  
-  plot_stacked <-
-    ggplot(
-      q,
-      aes(
-        x = interaction(agree_group, subcategory),
-        y = pct,
-        fill = answer
-      )
-    ) +
-    geom_col(width = 0.7) +
-    facet_wrap(~ domain, scales = "free_x") +
-    labs(
-      title = str_wrap(title$question),
-      x = NULL,
-      y = "Percentage",
-      fill = "Response"
-    ) +
-    theme_minimal() +
-    theme(
-      axis.text.x = element_text(angle = 45, hjust = 1),
-      legend.position = "none"
-    )
-  
-  
-  agree_levels_present <- intersect(
-    names(agree_disagree_colors),
-    unique(q$answer)
-  )
-  
-  if (length(agree_levels_present) > 0) {
-    plot_stacked <- plot_stacked +
-      scale_fill_manual(
-        values = agree_disagree_colors,
-        breaks = agree_levels_present
-      )
-  }
-  
-  plot_stacked <- plot_stacked +
-    scale_x_discrete(
-      labels = function(x) sub("^.*\\.", "", x)
-    )
-  # write.csv(q, file = file.path("output", paste0(var2, ".csv")), row.names = F)
-  
-  print(plot_stacked)
-  
-  print(q)
-  
-}
-
 
 agree_totals <- function(v1) {
   
@@ -462,6 +392,7 @@ agree_totals <- function(v1) {
   
 }
 
+# View and export results for Q31-Q34
 agree_totals(q31)
 agree_totals(q32)
 agree_totals(q33)
@@ -474,7 +405,7 @@ agree_totals(q34)
 # agree_totals(q40)
 
 
-###### Q35 to Q40 df #############
+# Export results for Q35-Q40 in single data frame
 
 q35 <- agree_totals(q35) |>
   mutate(q = "online reporting")
@@ -556,8 +487,7 @@ p_q35_40 <- ggplot(
 p_q35_40
 
 
-# Analysis of questions 32-34
-
+# Analysis of Q32-34
 
 beyond <- rbind(tabs(data, q32) |> 
                   mutate(issue = "mental health crises"),
@@ -683,11 +613,6 @@ time_charts <- time_charts |>
 
 
 
-asj_colors <- function (...) {
-  scale_fill_manual(
-    values =  c("#193f72", "#38c3e1", "#f47d20", "#009d8f", "#c5a5a5", "#fef3ee", "#ced4dc"),
-  )
-}
 
 
 charts_for_timeq <- function (char) {
@@ -726,16 +651,13 @@ charts_for_timeq("All")
 charts_for_timeq("Patrol")
 charts_for_timeq("Custodial")
 
-
-
 # 52% of patrol officers say they respond to a violent crime in progress a few times a week
 # More patrol officers deal with mh crisis and homelessness on a weekly basis than violent crime in progress.
 
 
 
 
-
-######## TABLES AND DATA VIZ FOR PROGRAM SUPPORT BY WORKED IN THOSE PROGRAMS #################################
+# TABLES AND DATA VIZ FOR PROGRAM SUPPORT BY WORKED IN THOSE PROGRAMS
 
 support_vars <- c("q35", "q36", "q37", "q38", "q39", "q40")
 worked_vars <- c("q42_6", "q42_1", "q42_2", "q42_3", "q42_4", "q42_5")
@@ -788,7 +710,7 @@ programs_summary_table <- programs_summary_table |>
     program == "q35" ~ "online reporting"
   ))
 
-programs_worked_summary_table <- 
+
 
 ####### relative rate q35 to q40 by q41 worked #########
 
@@ -834,19 +756,6 @@ ggsave(
 
 rrp1
 
-
-# rrp2 <- ggplot(rr_df, aes(x = rr, y = reorder(program, rr))) +
-#   geom_point(size = 4, color = "#003972") +
-#   geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
-#   geom_text(aes(label = round(rr, 2)), hjust = -0.4, size = 4) +
-#   labs(
-#     x = "Risk Ratio (RR)",
-#     y = NULL,
-#     title = "Risk ratios for agreement by program"
-#   ) +
-#   theme_minimal()
-# 
-# rrp2
 
 ####### BENEFITS OF MENTAL HEALTH RESPONSE ##########
 
@@ -922,14 +831,7 @@ ggsave(
 
 mh_benefit_p 
 
-agree_disagree_colors <- c(
-  "Strongly agree"      = "#08306B",  # dark blue
-  "Somewhat agree"      = "#6BAED6",  # light blue
-  "Somewhat disagree"   = "#FDBE85",  # light orange
-  "Strongly disagree"   = "#D94801"   # dark orange
-  )
-
-diversion <- programs_temp |>
+programs_temp |>
   group_by(q42_1) |>
   summarize(n = sum(q41_5),
             percent = mean(q41_5)) 
@@ -937,22 +839,10 @@ diversion <- programs_temp |>
 # 65% of people who have experience working with mental health clinicians or social workers think it is beneficial that clinicians can ensure people who need help get appropriate services or treatment and can divert them away from the justice system
   
 
-###### Q47: When there is x, crime goes down. ############
+# Q47: When there is x, crime goes down. ############
 q47 <- tabs(data, q47) |>
   mutate(answer = factor(answer, levels = answer[order(pct)]))
 
-q47_stacked <- q47 |>
-  mutate(q47_stacked_answer = case_when(answer %in% c("When communities have strong neighborhood safety programs, crime", "When there are cleaner neighborhoods, crime goes down", "When families have stability, crime goes down", "When there are more jobs and housing, crime goes down") ~ "Community-based solutions",
-                                        answer %in% c("When there are more arrests, crime goes down", "When there are longer prison sentences, crime goes down", "When there are longer prison sentences, crime goes down", "When more crimes are solved, crime goes down") ~ "Criminal justice system solutions",
-                                        answer == "Don’t know" ~ "Don’t know"))
-
-q47_stacked$q47_stacked_answer <- factor(
-  q47_stacked$q47_stacked_answer,
-  levels = c("Don’t know",
-             "Criminal justice system solutions",
-             "Community-based solutions"
-             )
-  )
 
 q47_labels <- c(
   "When communities have strong neighborhood safety programs, crime" = "When communities have strong neighborhood safety programs, crime goes down",
@@ -1007,40 +897,8 @@ q47_plot <-
 
 q47_plot
 
-q47_stacked_plot <- 
-  ggplot(q47_stacked, aes(x = q47_stacked_answer, y = pct, fill = answer)) +
-  geom_col(width = 0.7) +
-  labs(
-       x = NULL,
-       y = "Percentage",
-       fill = "Response") +
-  scale_y_continuous(limits = c(0,1),
-                     labels = scales::percent) +
-  scale_fill_manual(
-    values = c(
-      "When communities have strong neighborhood safety programs, crime" = "#6BAED6",
-      "When there are cleaner neighborhoods, crime goes down" = "#009d8f",
-      "When families have stability, crime goes down" = "#193f72",
-      "When there are more jobs and housing, crime goes down" = "#fef3ee",
-      "When there are more arrests, crime goes down" = "#ced4dc",
-      "When there are longer prison sentences, crime goes down" = "#f47d20",
-      "When more crimes are solved, crime goes down" = "#c5a5a5",
-      "Don’t know" = "black"
-    ),
-    labels = q47_labels
-  ) +
-  theme_minimal() +
-  guides(fill = guide_legend(reverse = TRUE)) +
-  coord_flip() +
-  theme(
-    panel.grid = element_blank(),
-    #legend.position = "bottom",
-    legend.direction = "vertical"
-  )
 
-q47_stacked_plot
-
-###### Q48: Shorter or longer prison sentences? ############
+# Q48: Shorter or longer prison sentences? 
 
 q48 <- tabs(data, q48) |>
   mutate(answer = factor(answer, levels = answer[order(pct)]))
@@ -1146,7 +1004,7 @@ q48x_plot <-
 
 q48x_plot
 
-###### Q49: For people who have completed their sentences and remained crime-free, which do you prefer: ############
+# Q49: For people who have completed their sentences and remained crime-free, which do you prefer?
 
 q49 <- tabs(data, q49) |>
   mutate(answer = factor(answer, levels = answer[order(pct)]))
@@ -1294,48 +1152,7 @@ ggsave(
   units = "in"
 )
 
-##### Q45 custodial ##########
 
-custodial <- data |> 
-  filter(grepl("Custodial", role))
-
-probation <- data |>
-  filter(grepl("robation", role))
-
-q45_custodial <- export(custodial, q45)
-
-q45_custodial <- tabs(custodial, q45) |>
-  mutate(answer = factor(answer, levels = answer[order(pct)]))
-
-q45_custodial_plot <- 
-  ggplot(q45_custodial, aes(x = answer, y = pct, fill = answer)) +
-  geom_col(width = 0.75) +
-  labs(title = "Do you prefer that governments invest more in",
-       x = NULL,
-       y = "Percentage",
-       fill = "Response") +
-  geom_text(aes(label = paste0(round(pct*100), "%")),
-            vjust = 0.25, hjust = -0.15, size = 4) +
-  scale_y_continuous(limits = c(0,0.75),
-                     labels = scales::percent) +
-  scale_fill_manual(
-    values = c(
-      "Preventing crime by strengthening communities" = "#6BAED6",
-      "Responding to crime by punishing people who commit crimes" = "#f47d20"
-    )) +
-  guides(fill = guide_legend(reverse = TRUE)) +
-  coord_flip() +
-  theme_minimal() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        panel.grid = element_blank(),
-        panel.background = element_blank(),
-        plot.background  = element_blank(),
-        strip.background = element_blank(),
-        legend.position = "bottom",
-        legend.direction = "vertical")
-
-q45_custodial_plot
 
 #### Q45 x role #####
 q45x <- crosstabs(data, q45, role) |>
@@ -1399,8 +1216,6 @@ q45x_plot
 
 
 ##### Q44 all ##########
-
-q44 <- export(data, q44)
 
 q44 <- tabs(data, q44) |>
   mutate(answer = factor(answer, levels = answer[order(pct)]))
@@ -1501,7 +1316,6 @@ q44x_plot
 
 
 ### Q46 all ####
-q46 <- export(data, q46)
 
 q46 <- tabs(data, q46) |>
   mutate(answer = factor(answer, levels = answer[order(pct)]))
@@ -1605,7 +1419,6 @@ q46x_plot <-
 q46x_plot
 
 ### Q50 all ####
-q50 <- export(data, q50)
 
 q50 <- tabs(data, q50) |>
   mutate(answer = factor(answer, levels = answer[order(pct)]))
@@ -1648,203 +1461,5 @@ q50_all_plot <-
 q50_all_plot
 
 
-##### Q51: If your city experienced a spike in violence, which would be most effective way to address it #####
-q51 <- export(data, q51)
-
-q51 <- tabs(data, q51) |>
-  mutate(answer = factor(answer, levels = answer[order(pct)]))
-
-unique(data$q51)
-
-q51_labels <- c(
-  "Deploy National Guard soldiers" = "Deploy National Guard soldiers",
-  "Expand police patrols" = "Expand police patrols",
-  "Expand policing in hot spots and neighborhood violence preventio" = "Expand policing in hot spots and neighborhood violence prevention programs"
-)
-
-q51_all_plot <- 
-  ggplot(q51, aes(x = answer, y = pct, fill = answer)) +
-  geom_col(width = 0.75) +
-  labs(title = "If your city experienced a spike in violence, which would be most effective way to address it:",
-       x = NULL,
-       y = "Percentage",
-       fill = "Response") +
-  geom_text(aes(label = paste0(round(pct*100), "%")),
-            vjust = 0.25, hjust = -0.15, size = 4) +
-  scale_fill_manual(
-    values = c(
-      "Expand policing in hot spots and neighborhood violence preventio" = "#08306B",
-      "Expand police patrols" = "#6BAED6",
-      "Deploy National Guard soldiers" = "#f47d20"
-    ),
-    labels = q51_labels) +
-  guides(fill = guide_legend(reverse = TRUE)) +
-  coord_flip() +
-  scale_y_continuous(limits = c(0,1),
-                     labels = scales::percent) +
-  theme_minimal() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        panel.grid = element_blank(),
-        panel.background = element_blank(),
-        plot.background  = element_blank(),
-        strip.background = element_blank(),
-        legend.position = "bottom",
-        legend.direction = "vertical"
-  )
-
-q51_all_plot
 
 
-########## Q52: are national guard capable of effectively patrolling US cities ########## 
-q52 <- export(data, q52)
-
-q52 <- tabs(data, q52) |>
-  mutate(answer = factor(answer, levels = answer[order(pct)]))
-
-unique(data$q52)
-
-q52_labels <- c(
-  "US military national guard soldiers are trained to protect our c" = "US military national guard soldiers are trained to protect our country from foreign adversaries, which is different from the responsibilities of local law enforcement",
-  "US military national guard soldiers are capable of effectively p" = "US military national guard soldiers are capable of effectively patrolling US cities and reducing crime"
-)
-
-q52_all_plot <- 
-  ggplot(q52, aes(x = answer, y = pct, fill = answer)) +
-  geom_col(width = 0.75) +
-  labs(title = "Which of the following statements do you agree with the most:",
-       x = NULL,
-       y = "Percentage",
-       fill = "Response") +
-  geom_text(aes(label = paste0(round(pct*100), "%")),
-            vjust = 0.25, hjust = -0.15, size = 4) +
-  scale_fill_manual(
-    values = c(
-      "US military national guard soldiers are capable of effectively p" = "#6BAED6",
-      "US military national guard soldiers are trained to protect our c" = "#f47d20"
-    ),
-    labels = q52_labels) +
-  guides(fill = guide_legend(reverse = TRUE)) +
-  coord_flip() +
-  scale_y_continuous(limits = c(0,1),
-                     labels = scales::percent) +
-  theme_minimal() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        panel.grid = element_blank(),
-        panel.background = element_blank(),
-        plot.background  = element_blank(),
-        strip.background = element_blank(),
-        legend.position = "bottom",
-        legend.direction = "vertical"
-  )
-
-q52_all_plot
-
-
-
-
-########## graveyard ########## 
-
-# program_ci <- programs_summary_table |>
-#   filter(support == "Agree") |>
-#   mutate(
-#     worked = factor(worked, labels = c("Did not work", "Worked")),
-#     se = sqrt(percent * (1 - percent) / n),
-#     ci_low = percent - 1.96 * se,
-#     ci_high = percent + 1.96 * se
-#   )
-
-##plot of program support by worked
-# p1 <- programs_summary_table |>
-#   mutate(
-#     worked = factor(worked, labels = c("Did not work", "Worked")) ) |>
-#   filter(support == "Agree") |>
-#   ggplot(aes(x = worked, y = percent, fill = worked)) +
-#   geom_col() +
-#   scale_y_continuous(limits = c(0,1),
-#                      labels = scales::percent) +
-#   facet_wrap(~ program) +
-#   labs(
-#     x = NULL,
-#     y = "Percent who agree"
-#   ) +
-#   theme_minimal() +
-#   theme(strip.text = element_text(face = "bold"))
-# 
-# p1
-
-# cvi_plot <- programs_summary_table |>
-#   filter(program == "violence interruption",
-#          support == "Agree") |>
-#   mutate(
-#     worked  = factor(worked, labels = c("Did not work", "Worked")),
-#     support = factor(support, levels = c("Agree", "Disagree"))
-#   ) |>
-#   ggplot(aes(x = support, y = percent, fill = worked)) +
-#   geom_col(position = position_dodge(width = 0.8)) +
-#   geom_text(
-#     aes(label = paste0(round(percent*100), "%")),
-#     position = position_dodge(width = 0.8),
-#     vjust = -0.75,
-#     size = 3,
-#     fontface = "bold") +
-#   labs(
-#     title = "cvi",
-#     x = NULL,
-#     y = "Percent of respondents",
-#     fill = "Worked in program"
-#    )+
-#   theme_minimal() +
-#   theme(
-#     axis.text.y  = element_blank(),
-#     axis.ticks.y = element_blank(),
-#     strip.text = element_text(face = "plain", hjust = 0),
-#     axis.text.x = element_text(hjust = 0.5),
-#     plot.title = element_text(face = "bold", hjust = 0.5)
-#   )
-# 
-# cvi_plot
-
-#####ODDS RATIOS BETWEEN WORKED GROUPS
-# or_df <- programs_summary_table |>
-#   filter(support %in% c("Agree", "Disagree")) |>
-#   group_by(program, worked, support) |>
-#   summarise(n = sum(n), .groups = "drop") |>
-#   pivot_wider(
-#     names_from = c(worked, support),
-#     values_from = n,
-#     names_sep = "_"
-#   )
-
-# or_df <- or_df |>
-#   mutate(
-#     or = (`1_Agree` / `1_Disagree`) / (`0_Agree` / `0_Disagree`)
-#   )
-# 
-# or_df <- or_df |>
-#   mutate(
-#     or_label = round(or, 2),
-#     direction = ifelse(or > 1, "Above 1", "Below 1")
-#   )
-
-# p6 <- ggplot(or_df, aes(x = reorder(program, or), y = or)) +
-#   geom_segment(aes(xend = program, y = 1, yend = or), color = "gray80") +
-#   geom_point(aes(color = direction), size = 5) +
-#   geom_text(aes(label = paste0((or_label), "x"), hjust = ifelse(or > 1, -0.5, 1.5)), size = 3.5) +
-#   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-#   scale_y_log10() +
-#   coord_flip() +  
-#   scale_color_manual(values = c("Above 1" = "#003972", "Below 1" = "#f47d20")) +
-#   labs(
-#     x = NULL,
-#     title = "Odds Ratios by Program",
-#     color = "Direction"
-#   ) +
-#   theme_minimal() +
-#   theme(
-#     axis.text.x = element_text(face = "bold"),
-#     plot.title = element_text(face = "bold", hjust = 0.5)
-#   )
-# 
-# p6
